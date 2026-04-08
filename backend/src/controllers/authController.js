@@ -199,7 +199,9 @@ const register = async (req, res) => {
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({ email });
+        const normalizedEmail = (email || '').toLowerCase().trim();
+        const user = await User.findOne({ email: normalizedEmail });
+        
         if (!user || !(await user.matchPassword(password))) {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
