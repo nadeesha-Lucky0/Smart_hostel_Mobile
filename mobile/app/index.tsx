@@ -13,7 +13,7 @@ export default function Index() {
     case 'admin':
       return <Redirect href="/admin/dashboard" />;
     case 'warden':
-      return <Redirect href="/warden/allocations" />;
+      return <Redirect href="/warden/dashboard" />;
     case 'student':
       return <Redirect href="/student/qr-view" />;
     case 'security':
