@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, ActivityIndicator, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, ActivityIndicator, Alert, Modal, Switch } from 'react-native';
 import Colors from '../../constants/Colors';
-import { Layers, MapPin, Grid, Info, X, Check, Power } from 'lucide-react-native';
+import { Layers, MapPin, Grid, Info, X, Check, Power, AlertTriangle, ShieldCheck } from 'lucide-react-native';
 import api from '../../services/api';
 
 export default function RoomManagement() {
-  const [floors, setFloors] = useState([]);
+  const [floors, setFloors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedWing, setSelectedWing] = useState('male');
   const [selectedFloor, setSelectedFloor] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchFloors = useCallback(async () => {
     try {
@@ -41,13 +42,77 @@ export default function RoomManagement() {
     }
   };
 
-  const handleToggleRoomStatus = async (roomId: string) => {
-    try {
-      await api.patch(`/rooms/${roomId}/toggle-status`);
-      // Update local state
-      setRooms(prev => prev.map(r => r._id === roomId ? { ...r, isactive: !r.isactive } : r));
-    } catch (err) {
-      Alert.alert('Error', 'Failed to update room status');
+  const handleToggleFloorStatus = async (floor: any) => {
+    const action = floor.isactive ? 'Deactivate' : 'Activate';
+    
+    const performToggle = async () => {
+      try {
+        setTogglingId(floor._id);
+        const res = await api.patch(`/floors/${floor._id}/toggle`);
+        // Update local state
+        setFloors(prev => prev.map(f => f._id === floor._id ? res.data : f));
+        
+        // If the floor we toggled is the one currently open in modal, refresh its rooms
+        if (selectedFloor?._id === floor._id) {
+          fetchRooms(floor._id);
+        }
+        
+        Alert.alert('Success', `Floor ${floor.floorNumber} ${action.toLowerCase()}d successfully`);
+      } catch (err: any) {
+        Alert.alert('Action Failed', err.response?.data?.error || `Could not ${action.toLowerCase()} floor`);
+      } finally {
+        setTogglingId(null);
+      }
+    };
+
+    if (floor.isactive) {
+      Alert.alert(
+        'Deactivate Floor',
+        `Are you sure you want to deactivate Floor ${floor.floorNumber}? All rooms on this floor will also be deactivated.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Deactivate', style: 'destructive', onPress: performToggle }
+        ]
+      );
+    } else {
+      performToggle();
+    }
+  };
+
+  const handleToggleRoomStatus = async (room: any) => {
+    const action = room.isactive ? 'Deactivate' : 'Activate';
+    
+    const performToggle = async () => {
+      try {
+        setTogglingId(room._id);
+        const res = await api.patch(`/rooms/${room._id}/toggle`);
+        // Update local state
+        setRooms(prev => prev.map(r => r._id === room._id ? { ...r, isactive: !r.isactive } : r));
+      } catch (err: any) {
+        Alert.alert('Action Failed', err.response?.data?.error || `Could not ${action.toLowerCase()} room`);
+      } finally {
+        setTogglingId(null);
+      }
+    };
+
+    if (room.isactive) {
+      // Check for occupancy (frontend check to complement backend)
+      const hasStudents = room.beds.some((b: any) => b.isOccupied);
+      if (hasStudents) {
+        Alert.alert('Cannot Deactivate', 'This room has occupied beds. Please reallocate students before deactivating.');
+        return;
+      }
+
+      Alert.alert(
+        'Deactivate Room',
+        `Deactivate Room ${selectedWing === 'female' ? 'F' : 'M'}${room.roomnumber}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Deactivate', style: 'destructive', onPress: performToggle }
+        ]
+      );
+    } else {
+      performToggle();
     }
   };
 
@@ -57,56 +122,75 @@ export default function RoomManagement() {
   };
 
   const renderFloorItem = ({ item }: any) => (
-    <TouchableOpacity style={styles.floorCard} onPress={() => handleViewRooms(item)}>
+    <View style={[styles.floorCard, !item.isactive && styles.inactiveCard]}>
       <View style={styles.floorHeader}>
-        <View style={styles.floorIcon}>
-          <Layers size={20} color={selectedWing === 'male' ? Colors.roles.student : Colors.roles.financial} />
+        <View style={[styles.floorIcon, { backgroundColor: item.isactive ? Colors.roles.warden + '15' : Colors.border }]}>
+          <Layers size={22} color={item.isactive ? Colors.roles.warden : Colors.textMuted} />
         </View>
-        <Text style={styles.floorNumber}>Floor {item.floorNumber}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: item.isactive ? '#10B98120' : '#EF444420' }]}>
-          <Text style={[styles.statusText, { color: item.isactive ? '#10B981' : '#EF4444' }]}>
-            {item.isactive ? 'Active' : 'Maintenance'}
-          </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.floorNumber}>Floor {item.floorNumber}</Text>
+          <Text style={styles.floorIdText}>{item.floorID}</Text>
+        </View>
+        <View style={styles.floorToggleAction}>
+          {togglingId === item._id ? (
+            <ActivityIndicator size="small" color={Colors.roles.warden} />
+          ) : (
+            <Switch 
+              value={item.isactive} 
+              onValueChange={() => handleToggleFloorStatus(item)}
+              trackColor={{ false: Colors.border, true: Colors.roles.warden + '50' }}
+              thumbColor={item.isactive ? Colors.roles.warden : '#FFF'}
+            />
+          )}
         </View>
       </View>
       
-      <View style={styles.floorDetails}>
-        <View style={styles.detailItem}>
-          <Grid size={16} color={Colors.textMuted} />
-          <Text style={styles.detailText}>{item.numberOfRooms || 0} Rooms</Text>
+      <View style={styles.floorStatsRow}>
+        <View style={styles.statItem}>
+          <Grid size={14} color={Colors.textMuted} />
+          <Text style={styles.statText}>{item.numberOfRooms || 19} Rooms</Text>
         </View>
-        <View style={styles.detailItem}>
-          <MapPin size={16} color={Colors.textMuted} />
-          <Text style={styles.detailText}>{selectedWing.toUpperCase()} Wing</Text>
+        <View style={styles.statItem}>
+          <ShieldCheck size={14} color={item.isactive ? '#10B981' : '#EF4444'} />
+          <Text style={[styles.statText, { color: item.isactive ? '#10B981' : '#EF4444' }]}>
+            {item.isactive ? 'Operational' : 'Deactivated'}
+          </Text>
         </View>
       </View>
 
-      <TouchableOpacity style={styles.viewRoomsBtn} onPress={() => handleViewRooms(item)}>
-        <Text style={styles.viewRoomsBtnText}>Manage Rooms</Text>
+      <TouchableOpacity 
+        style={[styles.manageBtn, !item.isactive && styles.manageBtnDisabled]} 
+        onPress={() => handleViewRooms(item)}
+        disabled={!item.isactive}
+      >
+        <Text style={[styles.manageBtnText, !item.isactive && styles.manageBtnTextDisabled]}>Manage Room Layout</Text>
       </TouchableOpacity>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
     <View style={styles.container}>
-      <View style={styles.wingToggle}>
-        <TouchableOpacity 
-          style={[styles.wingBtn, selectedWing === 'male' && styles.activeWingBtn]}
-          onPress={() => setSelectedWing('male')}
-        >
-          <Text style={[styles.wingBtnText, selectedWing === 'male' && styles.activeWingBtnText]}>Male Wing</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.wingBtn, selectedWing === 'female' && styles.activeWingBtn]}
-          onPress={() => setSelectedWing('female')}
-        >
-          <Text style={[styles.wingBtnText, selectedWing === 'female' && styles.activeWingBtnText]}>Female Wing</Text>
-        </TouchableOpacity>
+      <View style={styles.wingHeader}>
+        <View style={styles.wingToggle}>
+          <TouchableOpacity 
+            style={[styles.wingBtn, selectedWing === 'male' && styles.activeWingBtn]}
+            onPress={() => setSelectedWing('male')}
+          >
+            <Text style={[styles.wingBtnText, selectedWing === 'male' && styles.activeWingBtnText]}>Male Wing</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.wingBtn, selectedWing === 'female' && styles.activeWingBtn]}
+            onPress={() => setSelectedWing('female')}
+          >
+            <Text style={[styles.wingBtnText, selectedWing === 'female' && styles.activeWingBtnText]}>Female Wing</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {loading ? (
-        <View style={styles.loadingContainer}>
+        <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.roles.warden} />
+          <Text style={styles.loadingText}>Fetching Infrastructure...</Text>
         </View>
       ) : (
         <FlatList 
@@ -116,8 +200,9 @@ export default function RoomManagement() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Info size={40} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>No floors found for this wing</Text>
+              <AlertTriangle size={48} color={Colors.textMuted} />
+              <Text style={styles.emptyTitle}>No Floors Found</Text>
+              <Text style={styles.emptySub}>Please check the web dashboard to initialize floors for this wing.</Text>
             </View>
           }
         />
@@ -135,7 +220,7 @@ export default function RoomManagement() {
             <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalTitle}>Floor {selectedFloor?.floorNumber}</Text>
-                <Text style={styles.modalSub}>{selectedWing.toUpperCase()} Wing • Rooms</Text>
+                <Text style={styles.modalSub}>{selectedWing.toUpperCase()} Wing • Inventory</Text>
               </View>
               <TouchableOpacity onPress={() => setSelectedFloor(null)} style={styles.closeBtn}>
                 <X size={24} color={Colors.text} />
@@ -145,6 +230,7 @@ export default function RoomManagement() {
             {roomsLoading ? (
               <View style={styles.modalLoader}>
                 <ActivityIndicator color={Colors.roles.warden} />
+                <Text style={styles.modalLoaderText}>Loading Room Matrix...</Text>
               </View>
             ) : (
               <ScrollView contentContainerStyle={styles.roomsGrid}>
@@ -152,21 +238,29 @@ export default function RoomManagement() {
                   <View key={room._id} style={[styles.roomCard, !room.isactive && styles.inactiveRoom]}>
                     <View style={styles.roomHeader}>
                       <Text style={styles.roomNumber}>{selectedWing === 'female' ? 'F' : 'M'}{room.roomnumber}</Text>
-                      <TouchableOpacity onPress={() => handleToggleRoomStatus(room._id)}>
-                        <Power size={18} color={room.isactive ? '#10B981' : '#EF4444'} />
-                      </TouchableOpacity>
+                      {togglingId === room._id ? (
+                        <ActivityIndicator size="small" color={Colors.roles.warden} />
+                      ) : (
+                        <TouchableOpacity onPress={() => handleToggleRoomStatus(room)}>
+                          <Power size={18} color={room.isactive ? '#10B981' : '#EF4444'} />
+                        </TouchableOpacity>
+                      )}
                     </View>
                     <Text style={styles.roomType}>{room.type}</Text>
-                    <View style={styles.bedsRow}>
+                    <View style={styles.bedsGrid}>
                       {room.beds.map((bed: any) => (
                         <View 
                           key={bed.bedId} 
-                          style={[styles.bedDot, bed.isOccupied ? styles.occupiedBed : styles.availableBed]}
-                        />
+                          style={[styles.bedPill, bed.isOccupied ? styles.occupiedBedPill : styles.availableBedPill]}
+                        >
+                          <Text style={[styles.bedIdText, bed.isOccupied ? styles.occupiedText : styles.availableText]}>
+                            {bed.bedId}
+                          </Text>
+                        </View>
                       ))}
                     </View>
-                    <Text style={styles.occupancyText}>
-                      {room.beds.filter((b: any) => b.isOccupied).length}/{room.beds.length} Beds
+                    <Text style={styles.statusLabel}>
+                      {room.isactive ? (room.beds.every((b: any) => b.isOccupied) ? 'Full' : 'Available') : 'Maintenance'}
                     </Text>
                   </View>
                 ))}
@@ -181,44 +275,53 @@ export default function RoomManagement() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  wingToggle: { flexDirection: 'row', padding: 16, gap: 12, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  wingBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border },
-  activeWingBtn: { backgroundColor: Colors.roles.warden, borderColor: Colors.roles.warden },
+  wingHeader: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  wingToggle: { flexDirection: 'row', backgroundColor: Colors.background, padding: 4, borderRadius: 14, gap: 4 },
+  wingBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  activeWingBtn: { backgroundColor: Colors.roles.warden, elevation: 4, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
   wingBtnText: { fontSize: 13, fontWeight: '700', color: Colors.textMuted },
   activeWingBtnText: { color: '#FFF' },
-  list: { padding: 16, paddingBottom: 100 },
-  floorCard: { backgroundColor: Colors.surface, borderRadius: 24, padding: 20, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-  floorHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  floorIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
-  floorNumber: { flex: 1, fontSize: 18, fontWeight: '800', color: Colors.text },
-  statusBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
-  statusText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
-  floorDetails: { flexDirection: 'row', gap: 24, marginBottom: 20, paddingHorizontal: 4 },
-  detailItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  detailText: { fontSize: 13, fontWeight: '600', color: Colors.textMuted },
-  viewRoomsBtn: { borderTopWidth: 1, borderTopColor: Colors.background, paddingTop: 16, alignItems: 'center' },
-  viewRoomsBtnText: { fontSize: 14, fontWeight: '800', color: Colors.roles.warden },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 100, gap: 12 },
-  emptyText: { fontSize: 14, color: Colors.textMuted, fontWeight: '600' },
+  list: { padding: 20, paddingBottom: 100 },
+  floorCard: { backgroundColor: Colors.surface, borderRadius: 28, padding: 20, marginBottom: 16, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  inactiveCard: { opacity: 0.75, backgroundColor: '#F8FAFC' },
+  floorHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
+  floorIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  floorNumber: { fontSize: 18, fontWeight: '900', color: Colors.text },
+  floorIdText: { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
+  floorToggleAction: { paddingLeft: 8 },
+  floorStatsRow: { flexDirection: 'row', gap: 20, marginBottom: 20, paddingHorizontal: 4 },
+  statItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  statText: { fontSize: 12, fontWeight: '700', color: Colors.textMuted },
+  manageBtn: { backgroundColor: Colors.background, borderRadius: 16, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+  manageBtnDisabled: { borderColor: 'transparent', backgroundColor: Colors.border + '15' },
+  manageBtnText: { fontSize: 13, fontWeight: '800', color: Colors.roles.warden },
+  manageBtnTextDisabled: { color: Colors.textMuted },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { marginTop: 12, fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 100, gap: 16, paddingHorizontal: 40 },
+  emptyTitle: { fontSize: 18, fontWeight: '900', color: Colors.text },
+  emptySub: { fontSize: 14, color: Colors.textMuted, fontWeight: '500', textAlign: 'center', lineHeight: 20 },
   
-  // Modal Styles
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: Colors.background, borderTopLeftRadius: 32, borderTopRightRadius: 32, height: '85%', padding: 24 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  modalTitle: { fontSize: 24, fontWeight: '900', color: Colors.text },
-  modalSub: { fontSize: 13, color: Colors.textMuted, fontWeight: '600', marginTop: 2 },
-  closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center', elevation: 2 },
-  modalLoader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  roomsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingBottom: 40 },
-  roomCard: { width: '48%', backgroundColor: Colors.surface, borderRadius: 20, padding: 16, elevation: 1 },
-  inactiveRoom: { opacity: 0.6 },
-  roomHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  roomNumber: { fontSize: 16, fontWeight: '800', color: Colors.text },
-  roomType: { fontSize: 11, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 },
-  bedsRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
-  bedDot: { width: 8, height: 8, borderRadius: 4 },
-  availableBed: { backgroundColor: '#10B981' },
-  occupiedBed: { backgroundColor: Colors.border },
-  occupancyText: { fontSize: 10, fontWeight: '700', color: Colors.textMuted },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: Colors.surface, borderTopLeftRadius: 36, borderTopRightRadius: 36, height: '88%', padding: 24 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 },
+  modalTitle: { fontSize: 26, fontWeight: '900', color: Colors.text },
+  modalSub: { fontSize: 13, color: Colors.textMuted, fontWeight: '700', marginTop: 4, letterSpacing: 0.5 },
+  closeBtn: { width: 44, height: 44, borderRadius: 16, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border },
+  modalLoader: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  modalLoaderText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  roomsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingBottom: 60 },
+  roomCard: { width: '47.8%', backgroundColor: Colors.background, borderRadius: 24, padding: 16, borderWidth: 1, borderColor: Colors.border },
+  inactiveRoom: { opacity: 0.6, backgroundColor: Colors.border + '05' },
+  roomHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  roomNumber: { fontSize: 18, fontWeight: '900', color: Colors.text },
+  roomType: { fontSize: 10, fontWeight: '800', color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 14, letterSpacing: 1 },
+  bedsGrid: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  bedPill: { flex: 1, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  availableBedPill: { backgroundColor: '#10B98115', borderWidth: 1, borderColor: '#10B98130' },
+  occupiedBedPill: { backgroundColor: Colors.border + '30', borderWidth: 1, borderColor: Colors.border + '50' },
+  bedIdText: { fontSize: 12, fontWeight: '900' },
+  availableText: { color: '#10B981' },
+  occupiedText: { color: Colors.textMuted },
+  statusLabel: { fontSize: 10, fontWeight: '800', color: Colors.textMuted, textTransform: 'uppercase' },
 });
