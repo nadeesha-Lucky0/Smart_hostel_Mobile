@@ -23,7 +23,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)/register" options={{ headerShown: false }} />
         <Stack.Screen name="admin/dashboard" options={{ title: 'Admin Panel' }} />
         <Stack.Screen name="warden" options={{ headerShown: false }} />
-        <Stack.Screen name="student/qr-view" options={{ title: 'Student Portal' }} />
+        <Stack.Screen name="student" options={{ headerShown: false }} />
         <Stack.Screen name="security/qr-scanner" options={{ title: 'Security Log' }} />
         <Stack.Screen name="financial/verify-payments" options={{ title: 'Financial Records' }} />
       </Stack>
