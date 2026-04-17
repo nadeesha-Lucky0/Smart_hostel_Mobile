@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import Colors from '../../constants/Colors';
 import { Database, FileText, Download, Filter, Search } from 'lucide-react-native';
+import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 
 export default function HostelRecords() {
   const { token } = useAuthStore();
-  const [records, setRecords] = useState([]);
+  const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

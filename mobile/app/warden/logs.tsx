@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import Colors from '../../constants/Colors';
 import { LogIn, LogOut, Clock, Calendar, User, Search } from 'lucide-react-native';
+import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 
 export default function MovementLogs() {
   const { token } = useAuthStore();
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
