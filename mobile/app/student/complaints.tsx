@@ -28,7 +28,7 @@ export default function StudentComplaints() {
   const fetchComplaints = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/complaints/my');
+      const res = await api.get('/complaints/mine');
       setComplaints(res.data);
     } catch (err) {
       console.error('Fetch student complaints error:', err);

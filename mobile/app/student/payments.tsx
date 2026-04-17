@@ -27,7 +27,7 @@ export default function StudentPayments() {
     try {
       setLoading(true);
       // Endpoint for student's own payments
-      const res = await api.get('/student-payments/my');
+      const res = await api.get('/student-payments/status');
       setPayments(res.data);
     } catch (err) {
       console.error('Fetch student payments error:', err);

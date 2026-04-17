@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import Colors from '../../constants/Colors';
 import api from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
 import { 
   Home, 
   Bed, 
@@ -29,19 +30,22 @@ const StatCard = ({ title, value, sub, icon: Icon, color }: any) => (
 );
 
 export default function WardenDashboard() {
+  const { user } = useAuthStore();
   const [stats, setStats] = useState<any>({ rooms: '0', beds: '0', students: '0', pending: '0' });
 
   useEffect(() => {
+    if (user?.role !== 'warden') return;
+
     const fetchStats = async () => {
       try {
-        const res = await api.get('/dashboard/warden-stats');
+        const res = await api.get('/stats');
         setStats(res.data);
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
       }
     };
     fetchStats();
-  }, []);
+  }, [user?.role]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>

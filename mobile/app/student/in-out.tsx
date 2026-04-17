@@ -28,10 +28,20 @@ export default function StudentInOut() {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/qr/logs');
-      // For student, filter logs to only show their own if API returns all
-      // Or if the API is correctly scoped, it will return just theirs
-      setLogs(res.data.logs || res.data || []);
+      // For student, we get current status and last action
+      const res = await api.get('/qr/my-status');
+      if (res.data.success && res.data.lastAction) {
+        // Construct a single log item from the status if no logs available
+        const currentLog = {
+          _id: 'latest',
+          movementType: res.data.lastAction.toLowerCase(),
+          timestamp: res.data.lastTime,
+          location: 'Hostel Main Gate'
+        };
+        setLogs([currentLog]);
+      } else {
+        setLogs([]);
+      }
     } catch (err) {
       console.error('Fetch student logs error:', err);
     } finally {

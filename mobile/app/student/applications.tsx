@@ -27,7 +27,7 @@ export default function StudentApplications() {
     try {
       setLoading(true);
       // Endpoint for student's own applications
-      const res = await api.get('/applications/my');
+      const res = await api.get('/applications/me');
       setApplications(res.data);
     } catch (err) {
       console.error('Fetch student applications error:', err);
