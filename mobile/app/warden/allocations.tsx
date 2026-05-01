@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
   },
-  bedOccupied: { backgroundColor: Colors.border },
+  bedOccupied: { backgroundColor: Colors.danger },
   bedAvailable: { backgroundColor: '#10B981' },
   roomAvailabilityText: {
     fontSize: 11,

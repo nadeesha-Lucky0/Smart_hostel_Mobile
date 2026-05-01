@@ -138,8 +138,8 @@ export default function RoomManagement() {
             <Switch 
               value={item.isactive} 
               onValueChange={() => handleToggleFloorStatus(item)}
-              trackColor={{ false: Colors.border, true: Colors.roles.warden + '50' }}
-              thumbColor={item.isactive ? Colors.roles.warden : '#FFF'}
+              trackColor={{ false: Colors.border, true: Colors.roles.warden }}
+              thumbColor={'#FFF'}
             />
           )}
         </View>
@@ -319,9 +319,9 @@ const styles = StyleSheet.create({
   bedsGrid: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   bedPill: { flex: 1, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   availableBedPill: { backgroundColor: '#10B98115', borderWidth: 1, borderColor: '#10B98130' },
-  occupiedBedPill: { backgroundColor: Colors.border + '30', borderWidth: 1, borderColor: Colors.border + '50' },
+  occupiedBedPill: { backgroundColor: Colors.danger + '15', borderWidth: 1, borderColor: Colors.danger + '30' },
   bedIdText: { fontSize: 12, fontWeight: '900' },
   availableText: { color: '#10B981' },
-  occupiedText: { color: Colors.textMuted },
+  occupiedText: { color: Colors.danger },
   statusLabel: { fontSize: 10, fontWeight: '800', color: Colors.textMuted, textTransform: 'uppercase' },
 });
