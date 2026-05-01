@@ -3,7 +3,7 @@ import {
   View, StyleSheet, RefreshControl,
   ActivityIndicator, SafeAreaView, ScrollView
 } from "react-native";
-import { statsAPI } from "../../services/api";
+import { allocationsAPI, statsAPI } from "../../services/api";
 import { useAuth } from "../../store/AuthContext";
 import { Colors } from "../../constants/Colors";
 
@@ -25,14 +25,31 @@ export default function DashboardScreen() {
   const fetchData = useCallback(async () => {
     try {
       if (role === 'student') {
-        const res = await statsAPI.getStudentStats();
-        setData(res.data.data);
+        const res = await allocationsAPI.getMyAllocation();
+        const allocation = res?.data?.data || {};
+        setData({
+          roomNo: allocation.roomnumber ?? 'N/A',
+          bedNo: allocation.bedId ?? 'N/A',
+          floor: allocation.floorNumber ?? 'N/A',
+          status: 'Active',
+        });
       } else {
         const res = await statsAPI.getOverview();
-        setData(res.data.data);
+        setData(res.data);
       }
-    } catch (error) {
-      console.error("Dashboard fetch error:", error);
+    } catch (error: any) {
+      const status = error?.response?.status;
+      if (role === 'student' && status === 404) {
+        setData({
+          roomNo: 'N/A',
+          bedNo: 'N/A',
+          floor: 'N/A',
+          status: 'Pending Allocation',
+        });
+      } else {
+        console.warn("Dashboard fetch warning:", status || error?.message);
+        setData(null);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

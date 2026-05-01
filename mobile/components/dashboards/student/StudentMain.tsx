@@ -4,6 +4,7 @@ import { Colors } from '../../../constants/Colors';
 import DashboardHeader from '../../navigation/DashboardHeader';
 import ProfileSidebar from '../../navigation/ProfileSidebar';
 import StudentHome from './StudentHome';
+import { StudentView } from '../../../app/dashboard/in-out';
 
 interface StudentMainProps {
   user: any;
@@ -33,6 +34,8 @@ export default function StudentMain({ user, studentData, onLogout }: StudentMain
     switch (activeTab) {
       case 'home':
         return <StudentHome user={user} studentData={studentData} onActionPress={setActiveTab} />;
+      case 'gatepass':
+        return <StudentView user={user} onBack={() => setActiveTab('home')} />;
       default:
         return (
           <View style={styles.placeholderContainer}>

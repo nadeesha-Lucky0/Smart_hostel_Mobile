@@ -4,6 +4,7 @@ import { Colors } from '../../../constants/Colors';
 import DashboardHeader from '../../navigation/DashboardHeader';
 import ProfileSidebar from '../../navigation/ProfileSidebar';
 import SecurityHome from './SecurityHome';
+import { SecurityView } from '../../../app/dashboard/in-out';
 
 export default function SecurityMain({ user, stats, onLogout }: { user: any, stats?: any, onLogout: () => void }) {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
@@ -22,6 +23,8 @@ export default function SecurityMain({ user, stats, onLogout }: { user: any, sta
     switch (activeTab) {
       case 'home':
         return <SecurityHome user={user} stats={stats} onActionPress={setActiveTab} />;
+      case 'gatepass':
+        return <SecurityView onBack={() => setActiveTab('home')} />;
       default:
         return (
           <View style={styles.placeholderContainer}>

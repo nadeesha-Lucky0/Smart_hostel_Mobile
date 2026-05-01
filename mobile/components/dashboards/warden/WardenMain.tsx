@@ -5,6 +5,7 @@ import { Colors } from '../../../constants/Colors';
 import DashboardHeader from '../../navigation/DashboardHeader';
 import ProfileSidebar from '../../navigation/ProfileSidebar';
 import WardenHome from './WardenHome';
+import { WardenView } from '../../../app/dashboard/in-out';
 
 interface WardenMainProps {
   user: any;
@@ -38,6 +39,8 @@ export default function WardenMain({ user, stats, onLogout }: WardenMainProps) {
     switch (activeTab) {
       case 'home':
         return <WardenHome user={user} stats={stats} onActionPress={setActiveTab} />;
+      case 'gatepass':
+        return <WardenView onBack={() => setActiveTab('home')} />;
       default:
         return (
           <View style={styles.placeholderContainer}>
