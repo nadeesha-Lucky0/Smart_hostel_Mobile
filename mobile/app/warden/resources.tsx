@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity }
 import Colors from '../../constants/Colors';
 import { Package, Box, Tag, Layers, Plus } from 'lucide-react-native';
 import api from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
 
 export default function HostelResources() {
   const { token } = useAuthStore();
-  const [resources, setResources] = useState([]);
+  const [resources, setResources] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

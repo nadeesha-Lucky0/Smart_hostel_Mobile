@@ -6,6 +6,8 @@ interface User {
   name: string;
   email: string;
   role: 'student' | 'warden' | 'admin' | 'security' | 'financial';
+  phoneNumber?: string;
+  profilePicture?: string;
 }
 
 interface AuthState {
@@ -14,6 +16,7 @@ interface AuthState {
   isAuthenticated: boolean;
   login: (user: User, token: string) => Promise<void>;
   logout: () => Promise<void>;
+  setUser: (user: User) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -28,4 +31,5 @@ export const useAuthStore = create<AuthState>((set) => ({
     await SecureStore.deleteItemAsync('user_token');
     set({ user: null, token: null, isAuthenticated: false });
   },
+  setUser: (user) => set({ user }),
 }));

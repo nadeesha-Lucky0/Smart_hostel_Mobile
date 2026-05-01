@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import Colors from '../../constants/Colors';
 import api from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
 import { 
   Home, 
   Bed, 
@@ -29,19 +30,22 @@ const StatCard = ({ title, value, sub, icon: Icon, color }: any) => (
 );
 
 export default function WardenDashboard() {
-  const [stats, setStats] = useState({ rooms: '0', beds: '0', students: '0', pending: '0' });
+  const { user } = useAuthStore();
+  const [stats, setStats] = useState<any>({ rooms: '0', beds: '0', students: '0', pending: '0' });
 
   useEffect(() => {
+    if (user?.role !== 'warden') return;
+
     const fetchStats = async () => {
       try {
-        const res = await api.get('/dashboard/warden-stats');
+        const res = await api.get('/stats');
         setStats(res.data);
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
       }
     };
     fetchStats();
-  }, []);
+  }, [user?.role]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -159,7 +163,7 @@ const styles = StyleSheet.create({
   chartLabel: { fontSize: 12, fontWeight: '700', color: Colors.textMuted },
   activityList: { backgroundColor: Colors.surface, borderRadius: 24, overflow: 'hidden', elevation: 1 },
   activityItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.background },
-  activityIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.background, alignItems: 'center', justifyCenter: 'center' },
+  activityIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
   activityContent: { flex: 1, marginLeft: 12 },
   activityText: { fontSize: 14, fontWeight: '600', color: Colors.text },
   activityTime: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },

@@ -93,6 +93,7 @@ const styles = StyleSheet.create({
   listTitle: { fontSize: 18, fontWeight: '700', color: Colors.text },
   listContent: { paddingBottom: 20 },
   paymentCard: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: Colors.surface, padding: 16, borderRadius: 16, marginBottom: 12, elevation: 2 },
+  paymentInfo: { flex: 1 },
   studentName: { fontSize: 16, fontWeight: '600', color: Colors.text },
   paymentDate: { fontSize: 12, color: Colors.textMuted, marginTop: 4 },
   paymentStatus: { alignItems: 'flex-end' },

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, ScrollView, Image } from 'react-native';
 import Colors from '../../constants/Colors';
-import { Search, Filter, CheckCircle, XCircle, CreditCard, UserMinus, History, X, Info, Phone, Mail, MapPin, GraduationCap } from 'lucide-react-native';
+import { Search, Filter, CheckCircle, XCircle, CreditCard, UserMinus, History, X, Info, Phone, Mail, MapPin, GraduationCap, ChevronRight } from 'lucide-react-native';
 import api from '../../services/api';
 
 const TABS = [
