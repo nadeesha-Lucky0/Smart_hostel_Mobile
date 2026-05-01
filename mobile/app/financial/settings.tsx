@@ -5,7 +5,7 @@ import { User, Phone, Lock, Save, Camera, X, Check, Eye, EyeOff } from 'lucide-r
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 
-export default function WardenSettings() {
+export default function FinancialSettings() {
   const { user, token, setUser } = useAuthStore();
   const [name, setName] = useState(user?.name || '');
   const [loading, setLoading] = useState(false);
@@ -136,7 +136,7 @@ export default function WardenSettings() {
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'W'}</Text>
+              <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'F'}</Text>
             </View>
             <TouchableOpacity style={styles.cameraBtn}>
               <Camera size={16} color="#FFF" />
@@ -351,8 +351,8 @@ export default function WardenSettings() {
 
             {pwdState.step === 'otp' && (
               <View style={styles.modalBody}>
-                <View style={[styles.otpNotice, { backgroundColor: Colors.roles.warden + '10', borderColor: Colors.roles.warden + '30' }]}>
-                  <Text style={[styles.otpNoticeTitle, { color: Colors.roles.warden }]}>Authorization Required</Text>
+                <View style={[styles.otpNotice, { backgroundColor: Colors.roles.financial + '10', borderColor: Colors.roles.financial + '30' }]}>
+                  <Text style={[styles.otpNoticeTitle, { color: Colors.roles.financial }]}>Authorization Required</Text>
                   <Text style={styles.otpNoticeText}>Security code sent to your mobile.</Text>
                 </View>
                 <Text style={styles.modalSubtitle}>Enter Security Code</Text>
@@ -370,7 +370,7 @@ export default function WardenSettings() {
                     <Text style={styles.modalBackBtnText}>Back</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
-                    style={[styles.modalActionBtn, { flex: 1, marginTop: 0, backgroundColor: Colors.roles.warden }, pwdState.loading && styles.disabledBtn]}
+                    style={[styles.modalActionBtn, { flex: 1, marginTop: 0, backgroundColor: Colors.roles.financial }, pwdState.loading && styles.disabledBtn]}
                     onPress={verifyPwdOTP}
                     disabled={pwdState.loading}
                   >
@@ -388,7 +388,7 @@ export default function WardenSettings() {
                 <Text style={styles.successTitle}>Security Updated</Text>
                 <Text style={styles.successText}>Your password has been changed successfully.</Text>
                 <TouchableOpacity 
-                  style={[styles.modalActionBtn, { backgroundColor: Colors.roles.warden }]}
+                  style={[styles.modalActionBtn, { backgroundColor: Colors.roles.financial }]}
                   onPress={() => {
                     setPwdModalVisible(false);
                     setPwdState({ step: 'form', newPwd: '', confirmPwd: '', otp: '', loading: false });
@@ -409,9 +409,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   profileSection: { alignItems: 'center', padding: 40, backgroundColor: Colors.surface, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, elevation: 2 },
   avatarContainer: { position: 'relative' },
-  avatar: { width: 100, height: 100, borderRadius: 32, backgroundColor: Colors.roles.warden + '20', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 32, fontWeight: '800', color: Colors.roles.warden },
-  cameraBtn: { position: 'absolute', bottom: -4, right: -4, backgroundColor: Colors.roles.warden, padding: 8, borderRadius: 12, borderWidth: 3, borderColor: '#FFF' },
+  avatar: { width: 100, height: 100, borderRadius: 32, backgroundColor: Colors.roles.financial + '20', alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontSize: 32, fontWeight: '800', color: Colors.roles.financial },
+  cameraBtn: { position: 'absolute', bottom: -4, right: -4, backgroundColor: Colors.roles.financial, padding: 8, borderRadius: 12, borderWidth: 3, borderColor: '#FFF' },
   emailText: { fontSize: 14, color: Colors.textMuted, marginTop: 16, fontWeight: '600' },
   form: { padding: 24, paddingBottom: 100 },
   label: { fontSize: 13, fontWeight: '700', color: Colors.text, marginBottom: 8, marginTop: 24, textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -419,9 +419,9 @@ const styles = StyleSheet.create({
   input: { flex: 1, fontSize: 15, color: Colors.text, fontWeight: '600' },
   inputText: { flex: 1, fontSize: 15, color: Colors.textMuted, fontWeight: '600' },
   disabledInput: { backgroundColor: Colors.background + '80' },
-  linkBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: Colors.roles.warden + '10', borderRadius: 8 },
-  linkText: { fontSize: 12, fontWeight: '700', color: Colors.roles.warden },
-  saveBtn: { backgroundColor: Colors.roles.warden, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, borderRadius: 20, marginTop: 40, gap: 12, elevation: 4, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  linkBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: Colors.roles.financial + '10', borderRadius: 8 },
+  linkText: { fontSize: 12, fontWeight: '700', color: Colors.roles.financial },
+  saveBtn: { backgroundColor: Colors.roles.financial, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, borderRadius: 20, marginTop: 40, gap: 12, elevation: 4, shadowColor: Colors.roles.financial, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   disabledBtn: { opacity: 0.7 },
   saveBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
   // Modal Styles
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   modalSubtitle: { fontSize: 13, color: Colors.textMuted, fontWeight: '600', marginBottom: 16 },
   modalInputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, paddingHorizontal: 16, paddingVertical: 16, borderRadius: 16, borderWidth: 1, borderColor: Colors.border, gap: 12 },
   modalInput: { flex: 1, fontSize: 16, color: Colors.text, fontWeight: '600' },
-  modalActionBtn: { backgroundColor: Colors.roles.warden, padding: 18, borderRadius: 16, alignItems: 'center', marginTop: 32 },
+  modalActionBtn: { backgroundColor: Colors.roles.financial, padding: 18, borderRadius: 16, alignItems: 'center', marginTop: 32 },
   modalActionBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
   otpNotice: { backgroundColor: '#6366F110', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#6366F130', marginBottom: 24 },
   otpNoticeTitle: { fontSize: 12, fontWeight: '800', color: '#6366F1', textTransform: 'uppercase', marginBottom: 4 },

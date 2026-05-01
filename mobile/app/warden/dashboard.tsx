@@ -98,8 +98,8 @@ export default function WardenDashboard() {
             <View style={[styles.occupancyBar, { width: `${stats.occupancyRate || 0}%`, backgroundColor: Colors.roles.warden }]} />
           </View>
           <View style={styles.chartLabels}>
-            <Text style={styles.chartLabel}>Occupied: {stats.occupiedBeds || 0}</Text>
-            <Text style={styles.chartLabel}>Available: {stats.availableBeds || 0}</Text>
+            <Text style={[styles.chartLabel, { color: Colors.danger }]}>Occupied: {stats.occupiedBeds || 0}</Text>
+            <Text style={[styles.chartLabel, { color: '#10B981' }]}>Available: {stats.availableBeds || 0}</Text>
           </View>
         </View>
       </View>
