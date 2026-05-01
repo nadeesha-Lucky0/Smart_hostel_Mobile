@@ -45,9 +45,9 @@ export default function StudentMain({ user, studentData, onLogout }: StudentMain
 
   return (
     <View style={styles.container}>
-      <DashboardHeader 
-        title={getActiveTitle()} 
-        onMenuPress={() => setIsSidebarVisible(true)} 
+      <DashboardHeader
+        title={getActiveTitle()}
+        onMenuPress={() => setIsSidebarVisible(true)}
         onLogout={onLogout}
       />
 

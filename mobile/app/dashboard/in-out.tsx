@@ -10,6 +10,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../store/AuthContext';
 import { Colors, Typography, Spacing, Radius } from '../../constants/Colors';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import {
   fetchMyQrStatus, submitQrScan, fetchSecurityPin,
   fetchOutsideStudents, fetchLateStudents,
@@ -19,6 +21,7 @@ import {
 // ─── Student View ──────────────────────────────────────────────────────────
 
 function StudentView({ user }: { user: any }) {
+  const router = useRouter();
   const [status, setStatus] = useState<MyStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -142,9 +145,16 @@ function StudentView({ user }: { user: any }) {
 
   return (
     <SafeAreaView style={s.container}>
+      <View style={s.headerRow}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <Ionicons name="arrow-back" size={28} color="#fff" />
+        </TouchableOpacity>
+        <View>
+          <Text style={s.pageTitle}>In / Out</Text>
+          <Text style={s.pageSubtitle}>HOSTEL GATE ACCESS</Text>
+        </View>
+      </View>
       <ScrollView contentContainerStyle={s.scrollContent}>
-        <Text style={s.pageTitle}>In / Out</Text>
-        <Text style={s.pageSubtitle}>HOSTEL GATE ACCESS</Text>
 
         {loading ? (
           <ActivityIndicator color={Colors.primary} size="large" style={{ marginTop: 60 }} />
@@ -238,6 +248,7 @@ function StudentView({ user }: { user: any }) {
 // ─── Security View ─────────────────────────────────────────────────────────
 
 function SecurityView() {
+  const router = useRouter();
   const [pin, setPin] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [outsideCount, setOutsideCount] = useState<number | null>(null);
@@ -271,8 +282,15 @@ function SecurityView() {
 
   return (
     <SafeAreaView style={s.container}>
-      <Text style={s.pageTitle}>Gate Control</Text>
-      <Text style={s.pageSubtitle}>SECURITY DASHBOARD</Text>
+      <View style={s.headerRow}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <Ionicons name="arrow-back" size={28} color="#fff" />
+        </TouchableOpacity>
+        <View>
+          <Text style={s.pageTitle}>Gate Control</Text>
+          <Text style={s.pageSubtitle}>SECURITY DASHBOARD</Text>
+        </View>
+      </View>
 
       {/* Tabs */}
       <View style={s.tabRow}>
@@ -348,6 +366,7 @@ function SecurityView() {
 // ─── Warden View ───────────────────────────────────────────────────────────
 
 function WardenView() {
+  const router = useRouter();
   const [outside, setOutside] = useState<OutsideStudent[]>([]);
   const [lateCount, setLateCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -372,8 +391,15 @@ function WardenView() {
 
   return (
     <SafeAreaView style={s.container}>
-      <Text style={s.pageTitle}>In / Out Monitor</Text>
-      <Text style={s.pageSubtitle}>WARDEN DASHBOARD</Text>
+      <View style={s.headerRow}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <Ionicons name="arrow-back" size={28} color="#fff" />
+        </TouchableOpacity>
+        <View>
+          <Text style={s.pageTitle}>In / Out Monitor</Text>
+          <Text style={s.pageSubtitle}>WARDEN DASHBOARD</Text>
+        </View>
+      </View>
 
       {/* Stats */}
       <View style={s.statsRow}>
@@ -442,9 +468,11 @@ export default function InOutScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
+  headerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, marginTop: Spacing.md, gap: Spacing.sm },
+  backBtn: { padding: 4, marginLeft: -4 },
   scrollContent: { padding: Spacing.md, paddingBottom: Spacing['2xl'] },
-  pageTitle: { fontSize: Typography['3xl'], fontWeight: '900', color: '#fff', marginHorizontal: Spacing.md, marginTop: Spacing.md },
-  pageSubtitle: { fontSize: Typography.xs, color: Colors.textMuted, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', marginHorizontal: Spacing.md, marginBottom: Spacing.lg },
+  pageTitle: { fontSize: Typography['3xl'], fontWeight: '900', color: '#fff' },
+  pageSubtitle: { fontSize: Typography.xs, color: Colors.textMuted, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' },
 
   // Status card
   statusCard: { borderRadius: Radius.xl, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.md },

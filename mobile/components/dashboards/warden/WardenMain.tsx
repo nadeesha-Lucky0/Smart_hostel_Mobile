@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
 import DashboardHeader from '../../navigation/DashboardHeader';
 import ProfileSidebar from '../../navigation/ProfileSidebar';
@@ -13,6 +14,7 @@ interface WardenMainProps {
 }
 
 export default function WardenMain({ user, stats, onLogout }: WardenMainProps) {
+  const router = useRouter();
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
 
@@ -24,6 +26,7 @@ export default function WardenMain({ user, stats, onLogout }: WardenMainProps) {
     { id: 'records', title: 'Records/Stats', icon: 'stats-chart' },
     { id: 'complaints', title: 'Complaints', icon: 'chatbubbles' },
     { id: 'notices', title: 'Broadcast Notices', icon: 'notifications' },
+    { id: 'gatepass', title: 'In & Out Status', icon: 'swap-horizontal' },
     { id: 'resources', title: 'Hostel Resources', icon: 'cube' },
   ];
 
@@ -64,8 +67,12 @@ export default function WardenMain({ user, stats, onLogout }: WardenMainProps) {
         items={menuItems}
         activeId={activeTab}
         onItemPress={(id) => {
-          setActiveTab(id);
           setIsSidebarVisible(false);
+          if (id === 'gatepass') {
+            router.push('/dashboard/in-out');
+          } else {
+            setActiveTab(id);
+          }
         }}
         onLogout={onLogout!}
       />

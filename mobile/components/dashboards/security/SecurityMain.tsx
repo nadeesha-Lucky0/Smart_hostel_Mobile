@@ -38,14 +38,14 @@ export default function SecurityMain({ user, stats, onLogout }: { user: any, sta
       <View style={styles.content}>
         {renderContent()}
       </View>
-      <ProfileSidebar 
-        isVisible={isSidebarVisible} 
-        onClose={() => setIsSidebarVisible(false)} 
-        user={user} 
-        items={menuItems} 
-        activeId={activeTab} 
-        onItemPress={(id) => { setActiveTab(id); setIsSidebarVisible(false); }} 
-        onLogout={onLogout} 
+      <ProfileSidebar
+        isVisible={isSidebarVisible}
+        onClose={() => setIsSidebarVisible(false)}
+        user={user}
+        items={menuItems}
+        activeId={activeTab}
+        onItemPress={(id) => { setActiveTab(id); setIsSidebarVisible(false); }}
+        onLogout={onLogout}
       />
     </View>
   );
