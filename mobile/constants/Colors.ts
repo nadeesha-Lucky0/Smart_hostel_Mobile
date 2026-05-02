@@ -28,6 +28,18 @@ export const Colors = {
   gradientAccent: ['#FF6584', '#CC4466'],
   gradientCard: ['#1A1A2E', '#252540'],
   gradientDark: ['#0F0F1A', '#1A1A2E'],
+
+  // Backward-compat aliases for legacy screens
+  background: '#0F0F1A',
+  surface: '#1A1A2E',
+  text: '#F0F0FF',
+  roles: {
+    admin: '#8B5CF6',
+    financial: '#06B6D4',
+    security: '#10B981',
+    student: '#6C63FF',
+    warden: '#F59E0B',
+  },
 };
 
 export const Typography = {
@@ -57,3 +69,5 @@ export const Radius = {
   xl: 24,
   full: 999,
 };
+
+export default Colors;
