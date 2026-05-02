@@ -973,6 +973,7 @@ const ss = StyleSheet.create({
     borderTopLeftRadius: 32, borderTopRightRadius: 32,
     paddingHorizontal: 24, paddingTop: 0, paddingBottom: Platform.select({ ios: 40, android: 24 }),
     maxHeight: '94%',
+    height: '85%',
   },
   modalAccentBar: { height: 4, backgroundColor: WARDEN_COLOR, borderTopLeftRadius: 32, borderTopRightRadius: 32, marginBottom: 0 },
   modalHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 24, marginBottom: 24 },
