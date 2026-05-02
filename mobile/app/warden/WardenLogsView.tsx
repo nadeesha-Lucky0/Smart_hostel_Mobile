@@ -523,13 +523,8 @@ export function WardenView({ onBack }) {
   );
 }
 
-export default function InOutScreen() {
-  const { user } = useAuth();
-  const role = user?.role;
-
-  if (role === 'security') return <SecurityView />;
-  if (role === 'warden') return <WardenView />;
-  return <StudentView user={user} />;
+export default function WardenLogsScreen() {
+  return <WardenView />;
 }
 
 const s = StyleSheet.create({
@@ -600,3 +595,4 @@ const s = StyleSheet.create({
   statLabel: { color: Colors.textMuted, fontSize: Typography.xs, fontWeight: '700', letterSpacing: 1 },
   emptyText: { color: Colors.textSecondary, textAlign: 'center', padding: Spacing['2xl'], fontSize: Typography.base },
 });
+

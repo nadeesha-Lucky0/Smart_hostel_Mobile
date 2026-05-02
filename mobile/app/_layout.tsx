@@ -5,6 +5,30 @@ import { AuthProvider, useAuth } from "../store/AuthContext";
 import { View, ActivityIndicator } from "react-native";
 import { Colors } from "../constants/Colors";
 
+type AppHomeRoute =
+  | "/admin/dashboard"
+  | "/warden/dashboard"
+  | "/student"
+  | "/security/qr-scanner"
+  | "/financial/verify-payments";
+
+function getHomeRouteByRole(role?: string): AppHomeRoute {
+  switch (role) {
+    case "admin":
+      return "/admin/dashboard";
+    case "warden":
+      return "/warden/dashboard";
+    case "student":
+      return "/student";
+    case "security":
+      return "/security/qr-scanner";
+    case "financial":
+      return "/financial/verify-payments";
+    default:
+      return "/student";
+  }
+}
+
 /**
  * RootLayoutNav Component
  * Handles the authentication flow and redirection logic
@@ -19,15 +43,17 @@ function RootLayoutNav() {
     if (loading) return;
 
     // Checks to see if the user is in a specific route group
-    const inTabs = segments[0] === "dashboard";
     const inAuth = segments[0] === "(auth)";
+    const targetRoute = getHomeRouteByRole(user?.role);
+    const targetSegment = targetRoute.split("/")[1];
+    const inRoleRoot = segments[0] === targetSegment;
 
     if (!user && !inAuth) {
       // If not logged in and not in auth pages, redirect to login
       router.replace("/(auth)/login");
-    } else if (user && inAuth) {
-      // If logged in but still on auth pages, redirect to dashboard
-      router.replace("/dashboard");
+    } else if (user && (inAuth || !inRoleRoot)) {
+      // If logged in and not in the role area, redirect to role home
+      router.replace(targetRoute);
     }
   }, [user, loading, segments]);
 
@@ -43,7 +69,11 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+      <Stack.Screen name="admin" options={{ headerShown: false }} />
+      <Stack.Screen name="warden" options={{ headerShown: false }} />
+      <Stack.Screen name="student" options={{ headerShown: false }} />
+      <Stack.Screen name="security" options={{ headerShown: false }} />
+      <Stack.Screen name="financial" options={{ headerShown: false }} />
     </Stack>
   );
 }
