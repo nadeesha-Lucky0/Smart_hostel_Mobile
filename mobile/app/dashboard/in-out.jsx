@@ -19,6 +19,17 @@ import {
 
 export function StudentView({ user, onBack }) {
   const router = useRouter();
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/student');
+  };
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -142,7 +153,7 @@ export function StudentView({ user, onBack }) {
     <SafeAreaView style={s.container}>
       <View style={s.headerRow}>
         <TouchableOpacity
-          onPress={() => onBack ? onBack() : (router.canGoBack() ? router.back() : null)}
+          onPress={handleBack}
           style={s.backBtn}
         >
           <Ionicons name="arrow-back" size={28} color="#fff" />
@@ -239,12 +250,35 @@ export function StudentView({ user, onBack }) {
 
 export function SecurityView({ onBack }) {
   const router = useRouter();
+  const { logout } = useAuth();
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/security/qr-scanner');
+  };
   const [pin, setPin] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [outsideCount, setOutsideCount] = useState(null);
   const [outside, setOutside] = useState([]);
+  const [lateCount, setLateCount] = useState(0);
+  const [lateStudents, setLateStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('qr');
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace('/');
+    } catch (e) {
+      Alert.alert('Logout Failed', 'Please try again.');
+    }
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -253,10 +287,13 @@ export function SecurityView({ onBack }) {
         fetchSecurityPin(),
         fetchOutsideStudents(),
       ]);
+      const lateRes = await fetchLateStudents();
       setPin(pinRes.pin);
       setExpiresAt(pinRes.expiresAt || '');
       setOutsideCount(outsideRes.outsideCount);
       setOutside(outsideRes.outside);
+      setLateCount(lateRes?.lateCount || 0);
+      setLateStudents(lateRes?.lateStudents || []);
     } catch (e) {
       Alert.alert('Error', e?.response?.data?.message || 'Failed to load data');
     } finally {
@@ -274,7 +311,7 @@ export function SecurityView({ onBack }) {
     <SafeAreaView style={s.container}>
       <View style={s.headerRow}>
         <TouchableOpacity
-          onPress={() => onBack ? onBack() : (router.canGoBack() ? router.back() : null)}
+          onPress={handleBack}
           style={s.backBtn}
         >
           <Ionicons name="arrow-back" size={28} color="#fff" />
@@ -283,6 +320,9 @@ export function SecurityView({ onBack }) {
           <Text style={s.pageTitle}>Gate Control</Text>
           <Text style={s.pageSubtitle}>SECURITY DASHBOARD</Text>
         </View>
+        <TouchableOpacity onPress={handleLogout} style={s.headerLogoutBtn}>
+          <Ionicons name="log-out-outline" size={22} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       <View style={s.tabRow}>
@@ -292,6 +332,11 @@ export function SecurityView({ onBack }) {
         <TouchableOpacity style={[s.tab, tab === 'outside' && s.tabActive]} onPress={() => setTab('outside')}>
           <Text style={[s.tabText, tab === 'outside' && s.tabTextActive]}>
             Outside {outsideCount !== null ? `(${outsideCount})` : ''}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[s.tab, tab === 'late' && s.tabActive]} onPress={() => setTab('late')}>
+          <Text style={[s.tabText, tab === 'late' && s.tabTextActive]}>
+            Late ({lateCount})
           </Text>
         </TouchableOpacity>
       </View>
@@ -322,7 +367,7 @@ export function SecurityView({ onBack }) {
             <Text style={s.refreshText}>Refresh QR</Text>
           </TouchableOpacity>
         </ScrollView>
-      ) : (
+      ) : tab === 'outside' ? (
         <FlatList
           data={outside}
           keyExtractor={(_, i) => String(i)}
@@ -350,13 +395,46 @@ export function SecurityView({ onBack }) {
             );
           }}
         />
+      ) : (
+        <FlatList
+          data={lateStudents}
+          keyExtractor={(_, i) => `late-${i}`}
+          contentContainerStyle={{ padding: Spacing.md }}
+          ListEmptyComponent={<Text style={s.emptyText}>No late students now</Text>}
+          refreshing={loading}
+          onRefresh={loadData}
+          renderItem={({ item }) => (
+            <View style={[s.studentCard, s.studentCardLate]}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.studentName}>{item?.name || 'Unknown'}</Text>
+                <Text style={s.studentMeta}>{item?.studentId || 'N/A'}</Text>
+                <Text style={s.studentMeta}>{item?.email || 'No email'}</Text>
+              </View>
+              <View style={s.lateBadge}>
+                <Text style={s.lateBadgeText}>LATE</Text>
+              </View>
+            </View>
+          )}
+        />
       )}
+
     </SafeAreaView>
   );
 }
 
 export function WardenView({ onBack }) {
   const router = useRouter();
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/warden');
+  };
   const [outside, setOutside] = useState([]);
   const [lateCount, setLateCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -383,7 +461,7 @@ export function WardenView({ onBack }) {
     <SafeAreaView style={s.container}>
       <View style={s.headerRow}>
         <TouchableOpacity
-          onPress={() => onBack ? onBack() : (router.canGoBack() ? router.back() : null)}
+          onPress={handleBack}
           style={s.backBtn}
         >
           <Ionicons name="arrow-back" size={28} color="#fff" />
@@ -458,6 +536,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   headerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, marginTop: Spacing.md, gap: Spacing.sm },
   backBtn: { padding: 4, marginLeft: -4 },
+  headerLogoutBtn: { marginLeft: 'auto', padding: 6 },
   scrollContent: { padding: Spacing.md, paddingBottom: Spacing['2xl'] },
   pageTitle: { fontSize: Typography['3xl'], fontWeight: '900', color: '#fff' },
   pageSubtitle: { fontSize: Typography.xs, color: Colors.textMuted, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' },

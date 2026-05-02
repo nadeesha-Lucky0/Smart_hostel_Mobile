@@ -1,125 +1,51 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  View, StyleSheet, RefreshControl,
-  ActivityIndicator, SafeAreaView, ScrollView
-} from "react-native";
-import { allocationsAPI, statsAPI } from "../../services/api";
-import { useAuth } from "../../store/AuthContext";
-import { Colors } from "../../constants/Colors";
-
-// Professional Dashboard Components
-import StudentMain from "../../components/dashboards/student/StudentMain";
-import WardenMain from "../../components/dashboards/warden/WardenMain";
-import FinancialMain from "../../components/dashboards/financial/FinancialMain";
-import SecurityMain from "../../components/dashboards/security/SecurityMain";
-import AdminMain from "../../components/dashboards/admin/AdminMain";
+import React from 'react';
+import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { useAuth } from '../../store/AuthContext';
+import { Colors } from '../../constants/Colors';
+import { SecurityView, StudentView, WardenView } from './in-out';
 
 export default function DashboardScreen() {
-  const { user, logout, loading: authLoading } = useAuth();
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { user } = useAuth();
+  const role = user?.role?.toLowerCase();
 
-  const role = user?.role?.toLowerCase() || 'student';
-
-  const fetchData = useCallback(async () => {
-    try {
-      if (role === 'student') {
-        const res = await allocationsAPI.getMyAllocation();
-        const allocation = res?.data?.data || {};
-        setData({
-          roomNo: allocation.roomnumber ?? 'N/A',
-          bedNo: allocation.bedId ?? 'N/A',
-          floor: allocation.floorNumber ?? 'N/A',
-          status: 'Active',
-        });
-      } else {
-        const res = await statsAPI.getOverview();
-        setData(res.data);
-      }
-    } catch (error: any) {
-      const status = error?.response?.status;
-      if (role === 'student' && status === 404) {
-        setData({
-          roomNo: 'N/A',
-          bedNo: 'N/A',
-          floor: 'N/A',
-          status: 'Pending Allocation',
-        });
-      } else {
-        console.warn("Dashboard fetch warning:", status || error?.message);
-        setData(null);
-      }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [role]);
-
-  useEffect(() => {
-    if (user) fetchData();
-  }, [user, fetchData]);
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchData();
-  }, [fetchData]);
-
-  if (authLoading || (loading && !refreshing)) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
-
-  const renderProfile = () => {
-    if (!user) return null;
-
-    switch (role) {
-      case 'warden':
-        return <WardenMain user={user} stats={data} onLogout={logout} />;
-      case 'financial':
-        return <FinancialMain user={user} stats={data} onLogout={logout} />;
-      case 'security':
-        return <SecurityMain user={user} stats={data} onLogout={logout} />;
-      case 'admin':
-        return <AdminMain user={user} stats={data} onLogout={logout} />;
-      case 'student':
-      default:
-        return <StudentMain user={user} studentData={data} onLogout={logout} />;
-    }
-  };
+  if (role === 'security') return <SecurityView />;
+  if (role === 'warden') return <WardenView />;
+  if (role === 'student' || !role) return <StudentView user={user} />;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh} 
-            tintColor={Colors.primary} 
-            colors={[Colors.primary]}
-          />
-        }
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {renderProfile()}
-      </ScrollView>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.title}>Dashboard Not Mapped</Text>
+        <Text style={styles.subtitle}>
+          This role does not have an app-only dashboard route yet.
+        </Text>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  container: {
     flex: 1,
     backgroundColor: Colors.bg,
+    justifyContent: 'center',
+    padding: 20,
   },
-  loaderContainer: {
-    flex: 1,
-    backgroundColor: Colors.bg,
-    justifyContent: "center",
-    alignItems: "center",
+  card: {
+    backgroundColor: Colors.bgCard,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 20,
+  },
+  title: {
+    color: Colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: Colors.textSecondary,
+    fontSize: 14,
   },
 });
