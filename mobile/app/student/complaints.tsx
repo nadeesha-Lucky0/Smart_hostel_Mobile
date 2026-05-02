@@ -58,6 +58,8 @@ interface Complaint {
   description?: string;
   messages?: Message[];
   studentFeedback?: string;
+  studentUnreadCount?: number;   // unread messages from warden
+  wardenUnreadCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -150,7 +152,12 @@ export default function StudentComplaints() {
       const updated: Complaint = res.data?.data ?? res.data;
       setActiveComplaint(updated);
       if (updated.studentFeedback) setFeedbackGiven(updated.studentFeedback);
-      setComplaints(prev => prev.map(c => c._id === id ? { ...c, ...updated } : c));
+      // Zero out unread count locally as soon as student opens the chat
+      setComplaints(prev =>
+        prev.map(c => c._id === id ? { ...c, ...updated, studentUnreadCount: 0 } : c),
+      );
+      // Tell the backend the student has read the messages (fire-and-forget)
+      api.patch(`/complaints/${id}/read-student`).catch(() => {});
     } catch (err) {
       console.error('Fetch single error:', err);
     } finally {
@@ -616,16 +623,41 @@ export default function StudentComplaints() {
           </Text>
         </View>
 
-        <Text style={s.cardTitle} numberOfLines={1}>{getTitle(item)}</Text>
+        {/* Title + unread badge */}
+        <View style={s.cardTitleRow}>
+          <Text style={s.cardTitle} numberOfLines={1}>{getTitle(item)}</Text>
+          {(item.studentUnreadCount ?? 0) > 0 && (
+            <View style={s.unreadBadge}>
+              <Text style={s.unreadBadgeTxt}>{item.studentUnreadCount}</Text>
+            </View>
+          )}
+        </View>
 
         {item.description && (
           <Text style={s.cardDesc} numberOfLines={2}>{item.description}</Text>
         )}
 
+        {/* Last message — highlighted when unread warden reply exists */}
         {lastMsg?.content && (
           <View style={s.lastMsgRow}>
-            <MessageSquare size={11} color={Colors.textMuted} />
-            <Text style={s.lastMsgTxt} numberOfLines={1}>{lastMsg.content}</Text>
+            <MessageSquare
+              size={11}
+              color={
+                lastMsg.senderRole === 'warden' && (item.studentUnreadCount ?? 0) > 0
+                  ? STUDENT_COLOR
+                  : Colors.textMuted
+              }
+            />
+            <Text
+              style={[
+                s.lastMsgTxt,
+                lastMsg.senderRole === 'warden' && (item.studentUnreadCount ?? 0) > 0
+                  && s.lastMsgTxtUnread,
+              ]}
+              numberOfLines={1}
+            >
+              {lastMsg.senderRole === 'warden' ? 'Warden: ' : 'You: '}{lastMsg.content}
+            </Text>
           </View>
         )}
 
@@ -800,13 +832,24 @@ const s = StyleSheet.create({
     elevation: 2, shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
-  catText:    { flex: 1, fontSize: 11, fontWeight: '800', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8 },
-  timeText:   { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
-  cardTitle:  { fontSize: 16, fontWeight: '800', color: Colors.text, marginBottom: 6 },
-  cardDesc:   { fontSize: 13, color: Colors.textMuted, lineHeight: 19, marginBottom: 10 },
-  lastMsgRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 12 },
-  lastMsgTxt: { fontSize: 12, color: Colors.textMuted, fontStyle: 'italic', flex: 1 },
+  cardHeader:   { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
+  catText:      { flex: 1, fontSize: 11, fontWeight: '800', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8 },
+  timeText:     { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
+  // Title row with unread badge
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  cardTitle:    { flex: 1, fontSize: 16, fontWeight: '800', color: Colors.text },
+  unreadBadge:  {
+    minWidth: 22, height: 22, paddingHorizontal: 6,
+    backgroundColor: STUDENT_COLOR,
+    borderRadius: 11, alignItems: 'center', justifyContent: 'center',
+    elevation: 2, shadowColor: STUDENT_COLOR,
+    shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.4, shadowRadius: 4,
+  },
+  unreadBadgeTxt: { fontSize: 11, fontWeight: '900', color: '#fff' },
+  cardDesc:     { fontSize: 13, color: Colors.textMuted, lineHeight: 19, marginBottom: 10 },
+  lastMsgRow:   { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 12 },
+  lastMsgTxt:       { fontSize: 12, color: Colors.textMuted, fontStyle: 'italic', flex: 1 },
+  lastMsgTxtUnread: { color: Colors.text, fontStyle: 'normal', fontWeight: '700' },
   cardFooter: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     borderTopWidth: 1, borderTopColor: Colors.background, paddingTop: 12,
