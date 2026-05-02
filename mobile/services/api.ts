@@ -46,9 +46,8 @@ export const authAPI = {
 
 // Stats
 export const statsAPI = {
-  getStats: () => apiClient.get('/stats'),
-  getOverview: () => apiClient.get('/stats/overview'), 
-  getStudentStats: () => apiClient.get('/stats/student'),
+  getStats: () => apiClient.get('/allocations/stats'),
+  getOverview: () => apiClient.get('/allocations/stats'),
 };
 
 // Rooms
@@ -60,6 +59,7 @@ export const roomsAPI = {
 // Allocations
 export const allocationsAPI = {
   getAllocations: (params = {}) => apiClient.get('/allocations', { params }),
+  getMyAllocation: () => apiClient.get('/allocations/me'),
 };
 
 // Notices

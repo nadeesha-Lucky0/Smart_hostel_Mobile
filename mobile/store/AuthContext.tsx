@@ -7,6 +7,7 @@ interface User {
   name: string;
   email: string;
   role: string;
+  studentId?: string; // text-based student ID (e.g. "ST001"), used for QR scan
 }
 
 interface AuthContextType {

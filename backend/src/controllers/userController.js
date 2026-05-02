@@ -97,4 +97,36 @@ const deleteMyUserAccount = async (req, res) => {
     }
 };
 
-module.exports = { updateProfilePicture, deleteProfilePicture, deleteMyUserAccount };
+// @desc   Update user profile info
+// @route  PUT /api/users/profile
+const updateProfile = async (req, res) => {
+    try {
+        const { name } = req.body;
+        const user = await User.findById(req.user._id);
+
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        if (name) user.name = name;
+        // Phone number is handled via separate OTP flow, but we can allow direct update here if needed.
+        // For now, only name is updated directly.
+        
+        await user.save();
+
+        res.json({
+            success: true,
+            data: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                phoneNumber: user.phoneNumber,
+                profilePicture: user.profilePicture,
+                accountStatus: user.accountStatus
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+module.exports = { updateProfilePicture, deleteProfilePicture, deleteMyUserAccount, updateProfile };
