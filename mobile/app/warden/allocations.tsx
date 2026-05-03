@@ -29,6 +29,7 @@ export default function WardenAllocations() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [wingFilter, setWingFilter] = useState<string>('all');
+  const [refreshing, setRefreshing] = useState(false);
   
   // Data states
   const [students, setStudents] = useState<any[]>([]);
@@ -59,6 +60,14 @@ export default function WardenAllocations() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (view === 'hub') await fetchStudents();
+    else if (view === 'select_floor' && selectedStudent) await fetchFloors(selectedStudent.wing);
+    else if (view === 'select_room' && selectedFloor) await fetchAvailableRooms(selectedFloor._id);
+    setRefreshing(false);
   };
 
   const fetchFloors = async (wing: string) => {
@@ -167,6 +176,7 @@ export default function WardenAllocations() {
       <View style={styles.container}>
       {/* Header & Filters */}
       <View style={styles.headerContainer}>
+
         <View style={styles.searchBar}>
           <Search size={20} color={Colors.textMuted} />
           <TextInput 
@@ -194,25 +204,33 @@ export default function WardenAllocations() {
         </View>
       </View>
 
-      {/* Custom Tab Switcher */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'pending' && styles.tabActive]} 
-          onPress={() => setActiveTab('pending')}
-        >
-          <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>Pending Allocation</Text>
-          {students.filter(s => !s.isAllocated).length > 0 && (
-            <View style={styles.tabBadge}>
-              <Text style={styles.tabBadgeText}>{students.filter(s => !s.isAllocated).length}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'allocated' && styles.tabActive]} 
-          onPress={() => setActiveTab('allocated')}
-        >
-          <Text style={[styles.tabText, activeTab === 'allocated' && styles.tabTextActive]}>Allocated Students</Text>
-        </TouchableOpacity>
+      <View style={styles.sectionHeader}>
+        <View>
+          <Text style={styles.sectionTitle}>Student Allocations</Text>
+          <Text style={styles.sectionSub}>Assign Rooms & Manage Beds</Text>
+        </View>
+      </View>
+
+      <View style={[styles.subHeaderRow, { borderTopWidth: 1, borderTopColor: Colors.border }]}>
+        <View style={styles.subTabGroup}>
+          <TouchableOpacity 
+            style={[styles.miniTab, activeTab === 'pending' && styles.miniTabActive]} 
+            onPress={() => setActiveTab('pending')}
+          >
+            <Text style={[styles.miniTabText, activeTab === 'pending' && styles.miniTabTextActive]}>Pending</Text>
+            {students.filter(s => !s.isAllocated).length > 0 && (
+              <View style={[styles.tabBadge, activeTab === 'pending' && { backgroundColor: '#FFF' }]}>
+                <Text style={[styles.tabBadgeText, activeTab === 'pending' && { color: Colors.roles.warden }]}>{students.filter(s => !s.isAllocated).length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.miniTab, activeTab === 'allocated' && styles.miniTabActive]} 
+            onPress={() => setActiveTab('allocated')}
+          >
+            <Text style={[styles.miniTabText, activeTab === 'allocated' && styles.miniTabTextActive]}>Allocated</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {loading && view === 'hub' ? (
@@ -226,6 +244,8 @@ export default function WardenAllocations() {
           data={filteredStudents}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContent}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           renderItem={({ item }) => (
             <View style={styles.studentCard}>
               <View style={styles.cardHeader}>
@@ -496,12 +516,7 @@ export default function WardenAllocations() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  headerContainer: {
-    backgroundColor: Colors.surface,
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
+  headerContainer: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -543,39 +558,16 @@ const styles = StyleSheet.create({
   wingBtnTextActive: {
     color: '#FFF',
   },
-  tabContainer: {
-    flexDirection: 'row',
-    padding: 6,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 8,
-  },
-  tabActive: {
-    backgroundColor: Colors.roles.warden + '10',
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.textMuted,
-  },
-  tabTextActive: {
-    color: Colors.roles.warden,
-  },
-  tabBadge: {
-    backgroundColor: Colors.roles.warden,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
+  sectionHeader: { paddingHorizontal: 20, marginTop: 20, marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: '900', color: Colors.text },
+  sectionSub: { fontSize: 11, fontWeight: '600', color: Colors.textMuted, marginTop: 2 },
+  subHeaderRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border, marginBottom: 12 },
+  subTabGroup: { flexDirection: 'row', backgroundColor: Colors.background, padding: 4, borderRadius: 12, gap: 4, margin: 16 },
+  miniTab: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  miniTabActive: { backgroundColor: Colors.roles.warden, elevation: 2, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  miniTabText: { fontSize: 12, fontWeight: '700', color: Colors.textMuted },
+  miniTabTextActive: { color: '#FFF' },
+  tabBadge: { backgroundColor: Colors.roles.warden, minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   tabBadgeText: {
     fontSize: 10,
     fontWeight: '900',

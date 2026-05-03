@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, 
-  Alert, Modal, TextInput, Platform, Linking 
+  Alert, Modal, TextInput, Platform, Linking, RefreshControl 
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import Colors from '../../constants/Colors';
@@ -18,6 +18,7 @@ export default function StudentPayments() {
   const [paymentStatus, setPaymentStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false);
@@ -94,6 +95,12 @@ export default function StudentPayments() {
     } finally {
         setLoading(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchInitialData(), fetchPaymentStatus()]);
+    setRefreshing(false);
   };
 
   const handleDocumentPick = async (setter: any) => {
@@ -266,7 +273,17 @@ export default function StudentPayments() {
         (paymentStatus.refund_status !== 'Rejected' && paymentStatus?.refundPayment?.paymentStatus !== 'Rejected');
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={onRefresh} 
+          tintColor={Colors.roles.student}
+        />
+      }
+    >
        {/* ── Student Information ── */}
        <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -634,6 +651,7 @@ const InfoBox = ({ label, value }: { label: string, value: string }) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background || '#f8fafc' },
+  headerContainer: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border, marginBottom: 16 },
   content: { padding: 16, paddingBottom: 40, gap: 16 },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
   

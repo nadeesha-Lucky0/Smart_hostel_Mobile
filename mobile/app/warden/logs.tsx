@@ -9,6 +9,7 @@ export default function MovementLogs() {
   const { token } = useAuthStore();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchLogs();
@@ -24,6 +25,12 @@ export default function MovementLogs() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchLogs();
+    setRefreshing(false);
   };
 
   const renderLogItem = ({ item }: any) => {
@@ -57,6 +64,14 @@ export default function MovementLogs() {
 
   return (
     <View style={styles.container}>
+
+      <View style={styles.sectionHeader}>
+        <View>
+          <Text style={styles.sectionTitle}>Movement Logs</Text>
+          <Text style={styles.sectionSub}>Entry & Exit Tracking</Text>
+        </View>
+      </View>
+
       <View style={styles.summaryBar}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryValue}>{logs.filter((l: any) => l.type === 'ENTRY').length}</Text>
@@ -79,6 +94,8 @@ export default function MovementLogs() {
           renderItem={renderLogItem}
           keyExtractor={(item, index) => item._id || index.toString()}
           contentContainerStyle={styles.list}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Clock size={48} color={Colors.textMuted} />
@@ -93,6 +110,7 @@ export default function MovementLogs() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  headerContainer: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
   summaryBar: { flexDirection: 'row', backgroundColor: Colors.surface, margin: 16, padding: 16, borderRadius: 24, elevation: 1, alignItems: 'center' },
   summaryItem: { flex: 1, alignItems: 'center' },
   summaryValue: { fontSize: 20, fontWeight: '800', color: Colors.text },
@@ -112,4 +130,7 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 100, gap: 12 },
   emptyText: { fontSize: 14, color: Colors.textMuted, fontWeight: '600' },
+  sectionHeader: { paddingHorizontal: 20, marginTop: 20, marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: '900', color: Colors.text },
+  sectionSub: { fontSize: 11, fontWeight: '600', color: Colors.textMuted, marginTop: 2 },
 });

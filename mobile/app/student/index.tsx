@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, RefreshControl, Platform, Alert } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
 import { 
@@ -9,9 +9,12 @@ import {
   CheckCircle, 
   ArrowRight,
   User,
-  ShieldAlert
+  ShieldAlert,
+  Camera
 } from 'lucide-react-native';
 import api from '../../services/api';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -27,22 +30,99 @@ const DashboardCard = ({ title, value, color, icon: Icon, sub }: any) => (
 );
 
 export default function StudentDashboard() {
-  const { user } = useAuthStore();
+  const { user, login } = useAuthStore();
   const [stats, setStats] = useState({ applicationStatus: 'Pending', payments: 'Up to date', lastEntry: 'N/A' });
+  const [uploading, setUploading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // Mock or actual fetch
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setRefreshing(false);
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission Needed', 'We need camera roll permissions to upload your profile picture.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      handleUpload(result.assets[0].uri);
+    }
+  };
+
+  const handleUpload = async (uri: string) => {
+    setUploading(true);
+    const formData = new FormData();
+    const filename = uri.split('/').pop();
+    const match = /\.(\w+)$/.exec(filename || '');
+    const type = match ? `image/${match[1]}` : `image`;
+
+    formData.append('file', {
+      uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+      name: filename,
+      type,
+    } as any);
+
+    try {
+      const response = await api.put('/users/profile-picture', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (response.data.success) {
+        // Update local auth store with new picture URL
+        await login({ ...user, profilePicture: response.data.profilePicture }, null);
+        Alert.alert('Success', 'Profile picture updated successfully!');
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      Alert.alert('Upload Failed', error.response?.data?.message || 'Server error occurred');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={onRefresh} 
+          tintColor={Colors.roles.student} 
+        />
+      }
+    >
       <View style={styles.header}>
-        <View style={styles.greetingRow}>
-          <View>
+        <View style={styles.headerTop}>
+          <TouchableOpacity style={styles.profileBtn} onPress={pickImage} disabled={uploading}>
+             <View style={styles.avatarOuter}>
+               <View style={styles.avatar}>
+                  {user?.profilePicture ? (
+                    <Image source={{ uri: user.profilePicture }} style={styles.avatarImage} />
+                  ) : (
+                    <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'S'}</Text>
+                  )}
+               </View>
+               <View style={styles.activeBadge} />
+             </View>
+          </TouchableOpacity>
+          <View style={styles.headerInfo}>
             <Text style={styles.greeting}>Good Morning,</Text>
             <Text style={styles.name}>{user?.name || 'Student'}</Text>
           </View>
-          <TouchableOpacity style={styles.profileBtn}>
-            <View style={styles.avatar}>
-               <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'S'}</Text>
-            </View>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.idCard}>
@@ -113,13 +193,16 @@ export default function StudentDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: { padding: 24, paddingBottom: 0 },
-  greetingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  header: { padding: 24, paddingBottom: 0, paddingTop: 60 },
+  headerInfo: { marginLeft: 16, marginTop: 10 },
   greeting: { fontSize: 14, color: Colors.textMuted, fontWeight: '600' },
-  name: { fontSize: 24, fontWeight: '800', color: Colors.text },
-  avatar: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.roles.student + '15', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 18, fontWeight: '800', color: Colors.roles.student },
-  profileBtn: { padding: 4 },
+  name: { fontSize: 20, fontWeight: '800', color: Colors.text },
+  avatarOuter: { padding: 4, borderRadius: 22, borderWidth: 2, borderColor: Colors.roles.student + '40' },
+  avatar: { width: 60, height: 60, borderRadius: 18, backgroundColor: Colors.roles.student + '15', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarText: { fontSize: 24, fontWeight: '800', color: Colors.roles.student },
+  activeBadge: { position: 'absolute', bottom: 4, right: 4, width: 14, height: 14, borderRadius: 7, backgroundColor: '#10B981', borderWidth: 2, borderColor: '#FFF' },
+  profileBtn: { padding: 2 },
   idCard: { backgroundColor: Colors.roles.student, borderRadius: 24, padding: 20, elevation: 8, shadowColor: Colors.roles.student, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15 },
   idHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   idName: { fontSize: 18, fontWeight: '800', color: '#FFF', textTransform: 'uppercase' },

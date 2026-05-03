@@ -25,7 +25,7 @@ export default function RootLayout() {
         <Stack.Screen name="warden" options={{ headerShown: false }} />
         <Stack.Screen name="student" options={{ headerShown: false }} />
         <Stack.Screen name="security/qr-scanner" options={{ title: 'Security Log' }} />
-        <Stack.Screen name="financial/verify-payments" options={{ title: 'Financial Records' }} />
+        <Stack.Screen name="financial" options={{ headerShown: false }} />
       </Stack>
     </SafeAreaProvider>
   );

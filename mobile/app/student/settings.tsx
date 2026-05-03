@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import Colors from '../../constants/Colors';
 import { User, Phone, Lock, Save, Camera, X, Check, Eye, EyeOff } from 'lucide-react-native';
 import { useAuthStore } from '../../store/authStore';
@@ -19,6 +20,54 @@ export default function StudentSettings() {
   const [pwdState, setPwdState] = useState({ step: 'form', newPwd: '', confirmPwd: '', otp: '', loading: false });
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      return Alert.alert('Permission Denied', 'We need camera roll permissions to change your profile picture.');
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      uploadImage(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async (uri: string) => {
+    const formData = new FormData();
+    const filename = uri.split('/').pop() || 'profile.jpg';
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+    formData.append('file', {
+      uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+      name: filename,
+      type,
+    } as any);
+
+    setLoading(true);
+    try {
+      const response = await api.put('/users/profile-picture', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (response.data.success) {
+        setUser({ ...user, profilePicture: response.data.profilePicture });
+        Alert.alert('Success', 'Profile picture updated successfully');
+      }
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      Alert.alert('Error', 'Failed to upload profile picture');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUpdateProfile = async () => {
     if (!name.trim()) return Alert.alert('Error', 'Name cannot be empty');
@@ -134,14 +183,18 @@ export default function StudentSettings() {
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
         <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
+          <TouchableOpacity style={styles.avatarContainer} onPress={pickImage} disabled={loading}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'S'}</Text>
+              {user?.profilePicture ? (
+                <Image source={{ uri: user.profilePicture }} style={styles.profileImg} />
+              ) : (
+                <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'S'}</Text>
+              )}
             </View>
-            <TouchableOpacity style={styles.cameraBtn}>
-              <Camera size={16} color="#FFF" />
-            </TouchableOpacity>
-          </View>
+            <View style={styles.cameraBtn}>
+              {loading ? <ActivityIndicator size="small" color="#FFF" /> : <Camera size={16} color="#FFF" />}
+            </View>
+          </TouchableOpacity>
           <Text style={styles.emailText}>{user?.email}</Text>
         </View>
 
@@ -409,7 +462,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   profileSection: { alignItems: 'center', padding: 40, backgroundColor: Colors.surface, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, elevation: 2 },
   avatarContainer: { position: 'relative' },
-  avatar: { width: 100, height: 100, borderRadius: 32, backgroundColor: Colors.roles.student + '20', alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 100, height: 100, borderRadius: 32, backgroundColor: Colors.roles.student + '20', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  profileImg: { width: '100%', height: '100%' },
   avatarText: { fontSize: 32, fontWeight: '800', color: Colors.roles.student },
   cameraBtn: { position: 'absolute', bottom: -4, right: -4, backgroundColor: Colors.roles.student, padding: 8, borderRadius: 12, borderWidth: 3, borderColor: '#FFF' },
   emailText: { fontSize: 14, color: Colors.textMuted, marginTop: 16, fontWeight: '600' },

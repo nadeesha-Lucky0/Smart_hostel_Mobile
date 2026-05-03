@@ -34,7 +34,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  ZoomIn,
+  ZoomIn
 } from 'lucide-react-native';
 import api from '../../services/api';
 
@@ -475,6 +475,7 @@ function NoticeFormModal({
 export default function WardenNotices() {
   const [notices, setNotices]               = useState<Notice[]>([]);
   const [loading, setLoading]               = useState(true);
+  const [refreshing, setRefreshing]         = useState(false);
 
   // Detail view
   const [activeNotice, setActiveNotice]     = useState<Notice | null>(null);
@@ -501,6 +502,12 @@ export default function WardenNotices() {
       if (showLoader) setLoading(false);
     }
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchNotices(false);
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     fetchNotices();
@@ -761,7 +768,14 @@ export default function WardenNotices() {
 
   return (
     <View style={ss.container}>
-      {/* Summary bar */}
+
+      <View style={ss.sectionHeader}>
+        <View>
+          <Text style={ss.sectionTitle}>Hostel Notices</Text>
+          <Text style={ss.sectionSub}>Broadcast Announcements</Text>
+        </View>
+      </View>
+
       <View style={ss.summaryBar}>
         <View style={ss.summaryBarIcon}>
           <Megaphone size={22} color="#fff" />
@@ -787,6 +801,8 @@ export default function WardenNotices() {
           renderItem={renderItem}
           keyExtractor={item => item._id}
           contentContainerStyle={ss.list}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={ss.emptyWrap}>
@@ -819,6 +835,7 @@ const ss = StyleSheet.create({
   safeArea:  { flex: 1, backgroundColor: Colors.background },
   flex:      { flex: 1 },
   container: { flex: 1, backgroundColor: Colors.background },
+  headerContainer: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
   centered:  { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
 
   // ── Summary bar ──

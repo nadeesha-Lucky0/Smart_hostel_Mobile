@@ -30,7 +30,7 @@ import {
   Trash2,
   ArrowLeft,
   FileText,
-  ChevronDown,
+  ChevronDown
 } from 'lucide-react-native';
 import api from '../../services/api';
 
@@ -108,6 +108,7 @@ export default function WardenComplaints() {
   const [loading, setLoading]                 = useState(true);
   const [filter, setFilter]                   = useState('all');
   const [search, setSearch]                   = useState('');
+  const [refreshing, setRefreshing]           = useState(false);
 
   const [activeComplaint, setActiveComplaint] = useState<Complaint | null>(null);
   const [chatView, setChatView]               = useState(false);
@@ -155,6 +156,12 @@ export default function WardenComplaints() {
       if (showLoader) setChatLoading(false);
     }
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchComplaints(false);
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     fetchComplaints();
@@ -552,62 +559,62 @@ export default function WardenComplaints() {
   return (
     <View style={s.container}>
       {/* Header */}
-      <View style={s.pageHeader}>
-        <View style={s.pageHeaderL}>
-          <View style={s.pageIcon}>
-            <MessageSquare size={22} color="#fff" />
-          </View>
-          <View>
-            <Text style={s.pageTitle}>Complaints</Text>
-            <Text style={s.pageSub}>Student grievances & issues</Text>
-          </View>
+      <View style={s.headerContainer}>
+
+        {/* Stats Row - Restored but Premium Styled */}
+        <View style={s.statsRow}>
+          {([
+            { key: 'all',         label: 'Total',       color: Colors.roles.warden },
+            { key: 'open',        label: 'Open',        color: '#EF4444' },
+            { key: 'in-progress', label: 'In Progress', color: '#F59E0B' },
+            { key: 'resolved',    label: 'Resolved',    color: '#10B981' },
+          ] as const).map(({ key, label, color }) => (
+            <TouchableOpacity
+              key={key}
+              style={[s.statBox, filter === key && { borderColor: color, borderWidth: 2 }]}
+              onPress={() => setFilter(key)}
+            >
+              <Text style={[s.statVal, { color }]}>{counts[key]}</Text>
+              <Text style={s.statLab}>{label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
-        <TouchableOpacity style={s.refreshBtn} onPress={() => fetchComplaints()}>
-          <Text style={s.refreshTxt}>↻ Refresh</Text>
-        </TouchableOpacity>
+
+      <View style={s.sectionHeader}>
+        <View>
+          <Text style={s.sectionTitle}>Student Complaints</Text>
+          <Text style={s.sectionSub}>Resolution Center & Chat</Text>
+        </View>
       </View>
 
-      {/* Stats */}
-      <View style={s.statsRow}>
-        {([
-          { key: 'all',         label: 'Total',       color: '#6366F1' },
-          { key: 'open',        label: 'Open',        color: '#EF4444' },
-          { key: 'in-progress', label: 'In Progress', color: '#F59E0B' },
-          { key: 'resolved',    label: 'Resolved',    color: '#10B981' },
-        ] as const).map(({ key, label, color }) => (
-          <TouchableOpacity
-            key={key}
-            style={[s.statCard,
-              { borderColor: color + '40', backgroundColor: color + '12' },
-              filter === key && { borderColor: color, borderWidth: 2 }]}
-            onPress={() => setFilter(key)}
-          >
-            <Text style={[s.statCount, { color }]}>{counts[key]}</Text>
-            <Text style={[s.statLbl, { color }]}>{label}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={[s.subHeaderRow, { borderTopWidth: 1, borderTopColor: Colors.border }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
+          <View style={s.subTabGroup}>
+            {(['all', 'open', 'in-progress', 'resolved'] as const).map(f => (
+              <TouchableOpacity 
+                key={f} 
+                style={[s.miniTab, filter === f && s.miniTabActive]} 
+                onPress={() => setFilter(f)}
+              >
+                <Text style={[s.miniTabText, filter === f && s.miniTabTextActive]}>
+                  {f === 'all' ? 'All' : getStatusLabel(f)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
       </View>
 
-      {/* Filter tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterRow}>
-        {(['all', 'open', 'in-progress', 'resolved'] as const).map(f => (
-          <TouchableOpacity key={f} style={[s.filterTab, filter === f && s.filterTabOn]} onPress={() => setFilter(f)}>
-            <Text style={[s.filterTxt, filter === f && s.filterTxtOn]}>
-              {f === 'all' ? 'All' : getStatusLabel(f)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Search */}
-      <View style={s.searchWrap}>
-        <TextInput
-          style={s.searchInput}
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search by title, name or ID..."
-          placeholderTextColor={Colors.textMuted}
-        />
+        {/* Search inside header group */}
+        <View style={s.searchWrap}>
+          <TextInput
+            style={s.searchInput}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search by title, name or ID..."
+            placeholderTextColor={Colors.textMuted}
+          />
+        </View>
       </View>
 
       {/* List */}
@@ -621,6 +628,8 @@ export default function WardenComplaints() {
           renderItem={renderItem}
           keyExtractor={item => item._id}
           contentContainerStyle={s.list}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={s.emptyWrap}>
@@ -644,30 +653,28 @@ const s = StyleSheet.create({
   centered:  { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // Page header
-  pageHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 },
-  pageHeaderL: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  pageIcon:    { width: 48, height: 48, borderRadius: 16, backgroundColor: WARDEN_COLOR, alignItems: 'center', justifyContent: 'center' },
-  pageTitle:   { fontSize: 22, fontWeight: '900', color: Colors.text },
-  pageSub:     { fontSize: 12, color: Colors.textMuted, fontWeight: '600', marginTop: 2 },
-  refreshBtn:  { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: Colors.surface, borderRadius: 14, borderWidth: 1, borderColor: BORDER_COLOR },
-  refreshTxt:  { fontSize: 13, fontWeight: '700', color: Colors.textMuted },
+  headerContainer: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
 
   // Stats
-  statsRow:  { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginBottom: 16 },
-  statCard:  { flex: 1, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 8, alignItems: 'center', borderWidth: 1.5 },
-  statCount: { fontSize: 20, fontWeight: '900' },
-  statLbl:   { fontSize: 9, fontWeight: '800', textTransform: 'uppercase', marginTop: 2 },
+  statsRow:  { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  statBox: { flex: 1, backgroundColor: Colors.background, paddingVertical: 12, paddingHorizontal: 4, borderRadius: 16, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, borderWidth: 1, borderColor: BORDER_COLOR },
+  statVal: { fontSize: 18, fontWeight: '900' },
+  statLab: { fontSize: 8, fontWeight: '800', color: Colors.textMuted, textTransform: 'uppercase', marginTop: 2, letterSpacing: 0.5 },
 
   // Filter
-  filterRow:  { paddingHorizontal: 20, gap: 8, marginBottom: 12 },
-  filterTab:  { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: Colors.surface, borderWidth: 1, borderColor: BORDER_COLOR },
-  filterTabOn: { backgroundColor: WARDEN_COLOR, borderColor: WARDEN_COLOR },
-  filterTxt:  { fontSize: 12, fontWeight: '700', color: Colors.textMuted },
-  filterTxtOn: { color: '#fff' },
+  sectionHeader: { paddingHorizontal: 20, marginTop: 20, marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: '900', color: Colors.text },
+  sectionSub: { fontSize: 11, fontWeight: '600', color: Colors.textMuted, marginTop: 2 },
+  subHeaderRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border, marginBottom: 12 },
+  subTabGroup: { flexDirection: 'row', backgroundColor: Colors.background, padding: 4, borderRadius: 12, gap: 4, margin: 16 },
+  miniTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  miniTabActive: { backgroundColor: Colors.roles.warden, elevation: 2, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  miniTabText: { fontSize: 12, fontWeight: '700', color: Colors.textMuted },
+  miniTabTextActive: { color: '#FFF' },
 
   // Search
-  searchWrap:  { paddingHorizontal: 20, marginBottom: 12 },
-  searchInput: { backgroundColor: Colors.surface, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 11, fontSize: 14, fontWeight: '600', color: Colors.text, borderWidth: 1, borderColor: BORDER_COLOR },
+  searchWrap:  { marginBottom: 0 },
+  searchInput: { backgroundColor: Colors.background, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, fontSize: 14, fontWeight: '600', color: Colors.text, borderWidth: 1, borderColor: BORDER_COLOR, elevation: 1 },
 
   // List
   list: { paddingHorizontal: 20, paddingBottom: 100 },

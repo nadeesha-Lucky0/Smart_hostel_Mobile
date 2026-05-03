@@ -19,7 +19,7 @@ export default function Index() {
     case 'security':
       return <Redirect href="/security/qr-scanner" />;
     case 'financial':
-      return <Redirect href="/financial/verify-payments" />;
+      return <Redirect href="/financial/dashboard" />;
     default:
       return <Redirect href="/(auth)/login" />;
   }

@@ -12,7 +12,7 @@ export const Colors = {
     student: '#3B82F6', // Blue
     warden: '#8B5CF6', // Violet
     security: '#F97316', // Orange
-    financial: '#10B981', // Emerald
+    financial: '#4F46E5', // Indigo Primary
     admin: '#1F2937', // Slate 800
   }
 };

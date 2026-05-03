@@ -18,6 +18,7 @@ export default function RoomManagement() {
   const [isAddFloorModalOpen, setIsAddFloorModalOpen] = useState(false);
   const [selectedNewFloors, setSelectedNewFloors] = useState<number[]>([]);
   const [addingFloors, setAddingFloors] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const potentialFloors = [2, 3, 4, 5, 6, 7, 8];
 
@@ -95,6 +96,12 @@ export default function RoomManagement() {
         ? prev.filter(f => f !== floorNum)
         : [...prev, floorNum]
     );
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchFloors();
+    setRefreshing(false);
   };
 
   const handleToggleFloorStatus = async (floor: any) => {
@@ -270,12 +277,6 @@ export default function RoomManagement() {
   return (
     <View style={styles.container}>
       <View style={styles.wingHeader}>
-        <View style={styles.headerTop}>
-           <View>
-              <Text style={styles.pageTitle}>Hostel Wings</Text>
-              <Text style={styles.pageSub}>Manage Floors & Room Inventory</Text>
-           </View>
-        </View>
         <View style={styles.wingToggle}>
           <TouchableOpacity 
             style={[styles.wingBtn, selectedWing === 'male' && styles.activeWingBtn]}
@@ -308,6 +309,8 @@ export default function RoomManagement() {
           renderItem={renderFloorItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <AlertTriangle size={48} color={Colors.textMuted} />
@@ -449,7 +452,7 @@ export default function RoomManagement() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  wingHeader: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  wingHeader: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
   wingToggle: { flexDirection: 'row', backgroundColor: Colors.background, padding: 4, borderRadius: 14, gap: 4 },
   wingBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
   activeWingBtn: { backgroundColor: Colors.roles.warden, elevation: 4, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
@@ -535,9 +538,7 @@ const styles = StyleSheet.create({
   availableText: { color: '#10B981' },
   occupiedText: { color: Colors.danger },
   statusLabel: { fontSize: 10, fontWeight: '800', color: Colors.textMuted, textTransform: 'uppercase' },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   pageTitle: { fontSize: 24, fontWeight: '900', color: Colors.text },
-  pageSub: { fontSize: 12, fontWeight: '600', color: Colors.textMuted, marginTop: 2 },
   addFloorBtn: { backgroundColor: Colors.roles.warden, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, gap: 8, elevation: 4, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   addFloorBtnText: { color: '#FFF', fontSize: 13, fontWeight: '800' },
   addFloorModal: { height: 'auto', maxHeight: '75%', borderRadius: 36, margin: 20, marginBottom: 100 },

@@ -4,17 +4,11 @@ import { DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navi
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { 
   LayoutDashboard, 
-  Layers, 
-  UserCheck, 
-  Users, 
-  Database, 
-  ClipboardList, 
-  Package, 
-  MessageSquare, 
-  Bell, 
+  History, 
   Settings,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Wallet
 } from 'lucide-react-native';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
@@ -33,21 +27,18 @@ function CustomDrawerContent(props: any) {
     <DrawerContentScrollView {...props} contentContainerStyle={styles.drawerContainer}>
       <View style={styles.header}>
         <View style={styles.profileContainer}>
-          <View style={styles.profilePicContainer}>
+          <View style={styles.avatarContainer}>
             {user?.profilePicture ? (
-              <Image 
-                source={{ uri: user.profilePicture }} 
-                style={styles.profilePic} 
-              />
+              <Image source={{ uri: user.profilePicture }} style={styles.avatar} />
             ) : (
-              <View style={[styles.profilePic, styles.initialsContainer]}>
-                <Text style={styles.initialsText}>{user?.name?.charAt(0) || 'W'}</Text>
+              <View style={[styles.avatar, styles.initialsContainer]}>
+                <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'F'}</Text>
               </View>
             )}
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName} numberOfLines={1}>{user?.name || 'Warden'}</Text>
-            <Text style={styles.profileRole}>Hostel Warden</Text>
+            <Text style={styles.profileName} numberOfLines={1}>{user?.name || 'Financial'}</Text>
+            <Text style={styles.profileRole}>Financial Manager</Text>
           </View>
         </View>
       </View>
@@ -66,7 +57,7 @@ function CustomDrawerContent(props: any) {
   );
 }
 
-export default function WardenLayout() {
+export default function FinancialLayout() {
   return (
     <Drawer
       drawerContent={(props) => <CustomDrawerContent {...props} />}
@@ -80,13 +71,12 @@ export default function WardenLayout() {
         },
         headerTitleStyle: {
           fontWeight: '800',
-          fontSize: 20,
+          fontSize: 18,
           color: Colors.text,
         },
-        headerTitleAlign: 'center',
-        headerTintColor: Colors.roles.warden,
-        drawerActiveBackgroundColor: Colors.roles.warden + '10', // 10% opacity
-        drawerActiveTintColor: Colors.roles.warden,
+        headerTintColor: Colors.roles.financial,
+        drawerActiveBackgroundColor: Colors.roles.financial + '10',
+        drawerActiveTintColor: Colors.roles.financial,
         drawerInactiveTintColor: Colors.textMuted,
         drawerLabelStyle: {
           marginLeft: 8,
@@ -104,72 +94,16 @@ export default function WardenLayout() {
         name="dashboard"
         options={{
           drawerLabel: 'Dashboard',
-          title: 'Warden Dashboard',
+          title: 'Financial Hub',
           drawerIcon: ({ color, size }) => <LayoutDashboard size={size} color={color} />,
         }}
       />
       <Drawer.Screen
-        name="rooms"
-        options={{
-          drawerLabel: 'Floor & Room',
-          title: 'Room Management',
-          drawerIcon: ({ color, size }) => <Layers size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="allocations"
-        options={{
-          drawerLabel: 'Allocations',
-          title: 'Student Allocations',
-          drawerIcon: ({ color, size }) => <UserCheck size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="profiles"
-        options={{
-          drawerLabel: 'Profiles',
-          title: 'Manage Profiles',
-          drawerIcon: ({ color, size }) => <Users size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="records"
+        name="paymentrecords"
         options={{
           drawerLabel: 'Records',
-          title: 'Hostel Records',
-          drawerIcon: ({ color, size }) => <Database size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="logs"
-        options={{
-          drawerLabel: 'In/Out Logs',
-          title: 'Movement History',
-          drawerIcon: ({ color, size }) => <ClipboardList size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="resources"
-        options={{
-          drawerLabel: 'Resources',
-          title: 'Hostel Resources',
-          drawerIcon: ({ color, size }) => <Package size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="complaints"
-        options={{
-          drawerLabel: 'Complaints',
-          title: 'Grievance Chat',
-          drawerIcon: ({ color, size }) => <MessageSquare size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="notices"
-        options={{
-          drawerLabel: 'Notices',
-          title: 'Broadcasts',
-          drawerIcon: ({ color, size }) => <Bell size={size} color={color} />,
+          title: 'Payment Audit',
+          drawerIcon: ({ color, size }) => <History size={size} color={color} />,
         }}
       />
       <Drawer.Screen
@@ -180,12 +114,6 @@ export default function WardenLayout() {
           drawerIcon: ({ color, size }) => <Settings size={size} color={color} />,
         }}
       />
-
-      {/* Hide redundant tab-based screens from Drawer */}
-      <Drawer.Screen name="payment" options={{ drawerItemStyle: { display: 'none' }, drawerLabel: () => null }} />
-      <Drawer.Screen name="Clearance" options={{ drawerItemStyle: { display: 'none' }, drawerLabel: () => null }} />
-      <Drawer.Screen name="LeftStudents" options={{ drawerItemStyle: { display: 'none' }, drawerLabel: () => null }} />
-      <Drawer.Screen name="ProfileActivation" options={{ drawerItemStyle: { display: 'none' }, drawerLabel: () => null }} />
     </Drawer>
   );
 }
@@ -206,27 +134,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
-  profilePicContainer: {
+  avatarContainer: {
     padding: 2,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: Colors.roles.warden + '30',
+    borderColor: Colors.roles.financial + '30',
   },
-  profilePic: {
+  avatar: {
     width: 52,
     height: 52,
     borderRadius: 18,
-    backgroundColor: Colors.background,
-  },
-  initialsContainer: {
+    backgroundColor: Colors.roles.financial + '15',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.roles.warden + '15',
+    overflow: 'hidden',
   },
-  initialsText: {
-    fontSize: 22,
+  initialsContainer: {
+    backgroundColor: Colors.roles.financial + '15',
+  },
+  avatarText: {
+    fontSize: 24,
     fontWeight: '800',
-    color: Colors.roles.warden,
+    color: Colors.roles.financial,
   },
   profileInfo: {
     flex: 1,
@@ -238,7 +167,7 @@ const styles = StyleSheet.create({
   },
   profileRole: {
     fontSize: 12,
-    color: Colors.roles.warden,
+    color: Colors.roles.financial,
     fontWeight: '700',
     marginTop: 2,
     textTransform: 'uppercase',

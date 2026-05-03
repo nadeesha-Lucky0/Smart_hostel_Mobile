@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import Colors from '../../constants/Colors';
 import { Users, ShieldCheck, Activity, LogOut } from 'lucide-react-native';
 import { useAuthStore } from '../../store/authStore';
@@ -8,6 +8,14 @@ import { useRouter } from 'expo-router';
 export default function AdminDashboard() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // Mock fetch or actual API call if exists
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setRefreshing(false);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -15,10 +23,19 @@ export default function AdminDashboard() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={onRefresh} 
+          tintColor={Colors.roles.admin} 
+        />
+      }
+    >
       <View style={styles.header}>
-        <Text style={styles.welcome}>Welcome Back,</Text>
-        <Text style={styles.name}>{user?.name} (Admin)</Text>
+        <Text style={styles.greeting}>Welcome Back,</Text>
+        <Text style={styles.name}>{user?.name || 'Administrator'}</Text>
       </View>
 
       <View style={styles.statsContainer}>
@@ -51,9 +68,9 @@ export default function AdminDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: { padding: 24, backgroundColor: Colors.surface, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
-  welcome: { fontSize: 16, color: Colors.textMuted },
-  name: { fontSize: 24, fontWeight: '800', color: Colors.text },
+  header: { padding: 24, paddingTop: 60, backgroundColor: Colors.surface, borderBottomLeftRadius: 32, borderBottomRightRadius: 32 },
+  greeting: { fontSize: 16, color: Colors.textMuted, fontWeight: '600' },
+  name: { fontSize: 28, fontWeight: '800', color: Colors.text },
   statsContainer: { flexDirection: 'row', padding: 24, gap: 16 },
   statItem: { flex: 1, padding: 16, borderRadius: 20, alignItems: 'center' },
   statValue: { fontSize: 20, fontWeight: '700', color: Colors.text, marginTop: 8 },

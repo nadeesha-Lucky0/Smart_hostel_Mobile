@@ -29,8 +29,14 @@ function CustomDrawerContent(props: any) {
     <DrawerContentScrollView {...props} contentContainerStyle={styles.drawerContainer}>
       <View style={styles.header}>
         <View style={styles.profileContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'S'}</Text>
+          <View style={styles.avatarContainer}>
+            {user?.profilePicture ? (
+              <Image source={{ uri: user.profilePicture }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.initialsContainer]}>
+                <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'S'}</Text>
+              </View>
+            )}
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName} numberOfLines={1}>{user?.name || 'Student'}</Text>
@@ -155,13 +161,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
+  avatarContainer: {
+    padding: 2,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: Colors.roles.student + '30',
+  },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     backgroundColor: Colors.roles.student + '15',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  initialsContainer: {
+    backgroundColor: Colors.roles.student + '15',
   },
   avatarText: {
     fontSize: 24,

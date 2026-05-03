@@ -11,6 +11,14 @@ export default function SecurityScanner() {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setScanned(false);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     requestPermission();
@@ -60,8 +68,8 @@ export default function SecurityScanner() {
       
       <View style={styles.overlay}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Hostel Entrance Scanner</Text>
-          <Text style={styles.headerSub}>Scan Student Entry Pass</Text>
+          <Text style={styles.title}>Entrance Scanner</Text>
+          <Text style={styles.subtitle}>Scan student QR code for access</Text>
         </View>
 
         <View style={styles.scanArea}>
@@ -94,9 +102,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'space-between', padding: 40 },
-  header: { alignItems: 'center', marginTop: 20 },
-  headerTitle: { color: '#FFF', fontSize: 20, fontWeight: '800' },
-  headerSub: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
+  header: { padding: 30, paddingTop: 60, alignItems: 'center' },
+  title: { color: '#FFF', fontSize: 24, fontWeight: '800' },
+  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
   scanArea: { width: 250, height: 250, alignSelf: 'center', justifyContent: 'center', alignItems: 'center', position: 'relative' },
   corner: { position: 'absolute', width: 40, height: 40, borderColor: Colors.secondary, borderWidth: 4 },
   topLeft: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },

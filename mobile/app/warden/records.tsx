@@ -9,6 +9,7 @@ export default function HostelRecords() {
   const { token } = useAuthStore();
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -34,6 +35,12 @@ export default function HostelRecords() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchRecords();
+    setRefreshing(false);
   };
 
   const handleDeleteAllocation = (id: string, studentName: string) => {
@@ -156,6 +163,14 @@ export default function HostelRecords() {
 
   return (
     <View style={styles.container}>
+
+      <View style={styles.sectionHeader}>
+        <View>
+          <Text style={styles.sectionTitle}>Hostel Records</Text>
+          <Text style={styles.sectionSub}>Allocation History & Inventory</Text>
+        </View>
+      </View>
+
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
           <Text style={styles.statVal}>{records.length}</Text>
@@ -179,6 +194,8 @@ export default function HostelRecords() {
           renderItem={renderRecordItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Database size={48} color={Colors.textMuted} />
@@ -309,6 +326,7 @@ export default function HostelRecords() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  headerContainer: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
   statsRow: { flexDirection: 'row', padding: 16, alignItems: 'center', gap: 12 },
   statBox: { flex: 1, backgroundColor: Colors.surface, padding: 16, borderRadius: 20, elevation: 1 },
   statVal: { fontSize: 20, fontWeight: '800', color: Colors.text },
@@ -390,4 +408,7 @@ const styles = StyleSheet.create({
   bedOptionStatus: { fontSize: 10, fontWeight: '700', marginTop: 2 },
   updateBtn: { backgroundColor: Colors.roles.warden, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginTop: 40, elevation: 4, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   updateBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+  sectionHeader: { paddingHorizontal: 20, marginTop: 20, marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: '900', color: Colors.text },
+  sectionSub: { fontSize: 11, fontWeight: '600', color: Colors.textMuted, marginTop: 2 },
 });

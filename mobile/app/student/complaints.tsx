@@ -34,7 +34,7 @@ import {
   ThumbsUp,
   RotateCcw,
   Smile,
-  Trash2,
+  Trash2
 } from 'lucide-react-native';
 import api from '../../services/api';
 
@@ -99,6 +99,7 @@ export default function StudentComplaints() {
   // List state
   const [complaints, setComplaints]           = useState<Complaint[]>([]);
   const [loading, setLoading]                 = useState(true);
+  const [refreshing, setRefreshing]           = useState(false);
 
   // Chat state
   const [activeComplaint, setActiveComplaint] = useState<Complaint | null>(null);
@@ -144,6 +145,12 @@ export default function StudentComplaints() {
       if (showLoader) setLoading(false);
     }
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchComplaints(false);
+    setRefreshing(false);
+  };
 
   const fetchSingle = useCallback(async (id: string, showLoader = true) => {
     if (showLoader) setChatLoading(true);
@@ -695,13 +702,6 @@ export default function StudentComplaints() {
 
   return (
     <View style={s.container}>
-      {/* ── Header ── */}
-      <View style={s.pageHeader}>
-        <View>
-          <Text style={s.pageTitle}>Grievance Portal</Text>
-          <Text style={s.pageSub}>Report issues or suggest improvements</Text>
-        </View>
-      </View>
 
       {/* ── List ── */}
       {loading ? (
@@ -714,6 +714,8 @@ export default function StudentComplaints() {
           renderItem={renderItem}
           keyExtractor={item => item._id}
           contentContainerStyle={s.list}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={s.emptyWrap}>
@@ -818,9 +820,7 @@ const s = StyleSheet.create({
   dot:       { width: 6, height: 6, borderRadius: 3 },
 
   // ── Page header ──
-  pageHeader: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 12 },
-  pageTitle:  { fontSize: 24, fontWeight: '900', color: Colors.text },
-  pageSub:    { fontSize: 13, color: Colors.textMuted, fontWeight: '600', marginTop: 4 },
+  headerContainer: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
 
   // ── List ──
   list: { paddingHorizontal: 20, paddingBottom: 120 },
