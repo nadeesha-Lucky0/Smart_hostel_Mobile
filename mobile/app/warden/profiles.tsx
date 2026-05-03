@@ -37,11 +37,11 @@ export default function WardenProfiles() {
 
       const response = await api.get(endpoint);
       let data = response.data;
-      
+
       // Adaptation for different endpoint structures
       if (activeTab === 'clearance') data = response.data.data || response.data;
       if (activeTab === 'payments') data = response.data.map((p: any) => ({ ...p, name: p.studentName, status: p.status }));
-      
+
       setStudents(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Fetch error:', err);
@@ -73,7 +73,7 @@ export default function WardenProfiles() {
         const submission = students.find(s => s._id === studentId);
         await api.patch(`/student-payments/monthly-submissions/${submission.studentId}/${submission._id}`, { status: newStatus });
       }
-      
+
       Alert.alert('Success', `Status updated successfully`);
       setSelectedStudent(null);
       fetchData();
@@ -118,14 +118,12 @@ export default function WardenProfiles() {
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.cardBody}>
         <View style={styles.cardDetailRow}>
-          <GraduationCap size={14} color={Colors.textMuted} />
           <Text style={styles.detailText}>{item.studentDegree || item.degree || 'N/A'} • {item.studentYear || item.year || 'N/A'} Year</Text>
         </View>
         <View style={[styles.cardDetailRow, { marginTop: 4 }]}>
-          <Mail size={14} color={Colors.textMuted} />
           <Text style={styles.detailText} numberOfLines={1}>{item.studentEmail || item.email}</Text>
         </View>
       </View>
@@ -140,26 +138,18 @@ export default function WardenProfiles() {
   return (
     <View style={styles.container}>
 
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>Student Profiles</Text>
-          <Text style={styles.sectionSub}>Manage Records & Approvals</Text>
-        </View>
-      </View>
-
-      <View style={[styles.subHeaderRow, { borderTopWidth: 1, borderTopColor: Colors.border }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
-          <View style={styles.subTabGroup}>
-            {TABS.map(tab => (
-              <TouchableOpacity 
-                key={tab.id} 
-                style={[styles.miniTab, activeTab === tab.id && styles.miniTabActive]}
-                onPress={() => setActiveTab(tab.id)}
-              >
-                <Text style={[styles.miniTabText, activeTab === tab.id && styles.miniTabTextActive]}>{tab.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+      <View style={styles.tabWrapper}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScroll}>
+          {TABS.map(tab => (
+            <TouchableOpacity 
+              key={tab.id} 
+              style={[styles.tabBtn, activeTab === tab.id && styles.activeTabBtn]}
+              onPress={() => setActiveTab(tab.id)}
+            >
+              <Text style={[styles.tabBtnText, activeTab === tab.id && styles.activeTabBtnText]}>{tab.label}</Text>
+              {activeTab === tab.id && <View style={styles.activeUnderline} />}
+            </TouchableOpacity>
+          ))}
         </ScrollView>
       </View>
 
@@ -178,16 +168,16 @@ export default function WardenProfiles() {
           <View style={styles.searchContainer}>
             <View style={styles.searchBar}>
               <Search size={20} color={Colors.textMuted} />
-              <TextInput 
-                style={styles.searchInput} 
+              <TextInput
+                style={styles.searchInput}
                 placeholder={`Search ${activeTab}...`}
                 value={search}
                 onChangeText={setSearch}
               />
             </View>
           </View>
-          <FlatList 
-            data={students.filter(s => 
+          <FlatList
+            data={students.filter(s =>
               (s.studentName || s.name || '').toLowerCase().includes(search.toLowerCase()) ||
               (s.studentRollNumber || s.rollNumber || '').toLowerCase().includes(search.toLowerCase())
             )}
@@ -239,122 +229,122 @@ export default function WardenProfiles() {
 
               <View style={styles.modalBodyWrapper}>
                 {/* Academic Info */}
-                  <View style={styles.infoSection}>
-                    <Text style={styles.sectionTitle}>Academic Information</Text>
-                    <View style={styles.infoGrid}>
-                      <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>Faculty</Text>
-                        <Text style={styles.infoValue}>{selectedStudent?.faculty || 'N/A'}</Text>
-                      </View>
-                      <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>Year</Text>
-                        <Text style={styles.infoValue}>{selectedStudent?.studentYear || selectedStudent?.year || 'N/A'}</Text>
-                      </View>
+                <View style={styles.infoSection}>
+                  <Text style={styles.sectionTitle}>Academic Information</Text>
+                  <View style={styles.infoGrid}>
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Faculty</Text>
+                      <Text style={styles.infoValue}>{selectedStudent?.faculty || 'N/A'}</Text>
                     </View>
-                    <View style={styles.infoItemFull}>
-                      <Text style={styles.infoLabel}>Degree Program</Text>
-                      <Text style={styles.infoValue}>{selectedStudent?.studentDegree || selectedStudent?.degree || 'N/A'}</Text>
-                    </View>
-                    <View style={styles.infoItemFull}>
-                      <Text style={styles.infoLabel}>Registration Number</Text>
-                      <Text style={styles.infoValue}>{selectedStudent?.registrationNumber || 'N/A'}</Text>
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Year</Text>
+                      <Text style={styles.infoValue}>{selectedStudent?.studentYear || selectedStudent?.year || 'N/A'}</Text>
                     </View>
                   </View>
+                  <View style={styles.infoItemFull}>
+                    <Text style={styles.infoLabel}>Degree Program</Text>
+                    <Text style={styles.infoValue}>{selectedStudent?.studentDegree || selectedStudent?.degree || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.infoItemFull}>
+                    <Text style={styles.infoLabel}>Registration Number</Text>
+                    <Text style={styles.infoValue}>{selectedStudent?.registrationNumber || 'N/A'}</Text>
+                  </View>
+                </View>
 
-                  {/* Personal Info */}
-                  <View style={styles.infoSection}>
-                    <Text style={styles.sectionTitle}>Personal Details</Text>
-                    <View style={styles.infoGrid}>
-                      <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>Contact Number</Text>
-                        <Text style={styles.infoValue}>{selectedStudent?.contactNumber || 'N/A'}</Text>
-                      </View>
-                      <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>NIC / ID Number</Text>
-                        <Text style={styles.infoValue}>{selectedStudent?.nic || 'N/A'}</Text>
-                      </View>
+                {/* Personal Info */}
+                <View style={styles.infoSection}>
+                  <Text style={styles.sectionTitle}>Personal Details</Text>
+                  <View style={styles.infoGrid}>
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Contact Number</Text>
+                      <Text style={styles.infoValue}>{selectedStudent?.contactNumber || 'N/A'}</Text>
                     </View>
-                    <View style={styles.infoItemFull}>
-                      <Text style={styles.infoLabel}>Email Address</Text>
-                      <Text style={styles.infoValue}>{selectedStudent?.studentEmail || selectedStudent?.email || 'N/A'}</Text>
-                    </View>
-                    <View style={styles.infoItemFull}>
-                      <Text style={styles.infoLabel}>Permanent Address</Text>
-                      <Text style={styles.infoValue}>{selectedStudent?.permanentAddress || 'N/A'}</Text>
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>NIC / ID Number</Text>
+                      <Text style={styles.infoValue}>{selectedStudent?.nic || 'N/A'}</Text>
                     </View>
                   </View>
+                  <View style={styles.infoItemFull}>
+                    <Text style={styles.infoLabel}>Email Address</Text>
+                    <Text style={styles.infoValue}>{selectedStudent?.studentEmail || selectedStudent?.email || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.infoItemFull}>
+                    <Text style={styles.infoLabel}>Permanent Address</Text>
+                    <Text style={styles.infoValue}>{selectedStudent?.permanentAddress || 'N/A'}</Text>
+                  </View>
+                </View>
 
-                  {/* Emergency Contact */}
-                  <View style={styles.infoSection}>
-                    <Text style={styles.sectionTitle}>Emergency Contact</Text>
-                    <View style={styles.infoItemFull}>
-                      <Text style={styles.infoLabel}>Guardian Name</Text>
-                      <Text style={styles.infoValue}>{selectedStudent?.guardianName || selectedStudent?.emergencyContactName || 'N/A'}</Text>
-                    </View>
-                    <View style={styles.infoItemFull}>
-                      <Text style={styles.infoLabel}>Guardian Contact Number</Text>
-                      <Text style={styles.infoValue}>{selectedStudent?.guardianContactNumber || selectedStudent?.emergencyContactPhone || 'N/A'}</Text>
+                {/* Emergency Contact */}
+                <View style={styles.infoSection}>
+                  <Text style={styles.sectionTitle}>Emergency Contact</Text>
+                  <View style={styles.infoItemFull}>
+                    <Text style={styles.infoLabel}>Guardian Name</Text>
+                    <Text style={styles.infoValue}>{selectedStudent?.guardianName || selectedStudent?.emergencyContactName || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.infoItemFull}>
+                    <Text style={styles.infoLabel}>Guardian Contact Number</Text>
+                    <Text style={styles.infoValue}>{selectedStudent?.guardianContactNumber || selectedStudent?.emergencyContactPhone || 'N/A'}</Text>
+                  </View>
+                </View>
+
+                {/* Medical Information */}
+                <View style={styles.infoSection}>
+                  <Text style={styles.sectionTitle}>Medical Information</Text>
+                  <View style={styles.medicalStatusRow}>
+                    <Text style={styles.infoLabel}>Has Medical Condition?</Text>
+                    <View style={[styles.boolBadge, { backgroundColor: selectedStudent?.hasMedicalCondition ? '#EF444420' : '#10B98120' }]}>
+                      <Text style={[styles.boolText, { color: selectedStudent?.hasMedicalCondition ? '#EF4444' : '#10B981' }]}>
+                        {selectedStudent?.hasMedicalCondition ? 'YES' : 'NO'}
+                      </Text>
                     </View>
                   </View>
-
-                  {/* Medical Information */}
-                  <View style={styles.infoSection}>
-                    <Text style={styles.sectionTitle}>Medical Information</Text>
-                    <View style={styles.medicalStatusRow}>
-                       <Text style={styles.infoLabel}>Has Medical Condition?</Text>
-                       <View style={[styles.boolBadge, { backgroundColor: selectedStudent?.hasMedicalCondition ? '#EF444420' : '#10B98120' }]}>
-                         <Text style={[styles.boolText, { color: selectedStudent?.hasMedicalCondition ? '#EF4444' : '#10B981' }]}>
-                           {selectedStudent?.hasMedicalCondition ? 'YES' : 'NO'}
-                         </Text>
-                       </View>
-                    </View>
-                    {selectedStudent?.hasMedicalCondition && (
-                      <View style={styles.medicalDetails}>
-                        <Text style={styles.medicalNote}>{selectedStudent?.medicalConditionDetails || 'No details provided'}</Text>
-                      </View>
-                    )}
-                    {selectedStudent?.medicalReportUrl && (
-                      <TouchableOpacity 
-                        style={styles.fileLink} 
-                        onPress={() => selectedStudent?.medicalReportUrl && Linking.openURL(selectedStudent.medicalReportUrl)}
-                      >
-                        <Info size={16} color={Colors.roles.warden} />
-                        <Text style={styles.fileLinkText}>View Medical Report</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-
-                  {/* Payment Slip Preview */}
-                  {selectedStudent?.paymentSlipUrl && (
-                    <View style={styles.infoSection}>
-                      <Text style={styles.sectionTitle}>Initial Payment Slip</Text>
-                      <TouchableOpacity 
-                        onPress={() => selectedStudent?.paymentSlipUrl && Linking.openURL(selectedStudent.paymentSlipUrl)}
-                        style={styles.slipPreview}
-                      >
-                        <Image source={{ uri: selectedStudent.paymentSlipUrl }} style={styles.slipImage} />
-                        <View style={styles.slipOverlay}>
-                           <Search size={24} color="#FFF" />
-                           <Text style={styles.slipOverlayText}>Tap to enlarge</Text>
-                        </View>
-                      </TouchableOpacity>
+                  {selectedStudent?.hasMedicalCondition && (
+                    <View style={styles.medicalDetails}>
+                      <Text style={styles.medicalNote}>{selectedStudent?.medicalConditionDetails || 'No details provided'}</Text>
                     </View>
                   )}
+                  {selectedStudent?.medicalReportUrl && (
+                    <TouchableOpacity
+                      style={styles.fileLink}
+                      onPress={() => selectedStudent?.medicalReportUrl && Linking.openURL(selectedStudent.medicalReportUrl)}
+                    >
+                      <Info size={16} color={Colors.roles.warden} />
+                      <Text style={styles.fileLinkText}>View Medical Report</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Payment Slip Preview */}
+                {selectedStudent?.paymentSlipUrl && (
+                  <View style={styles.infoSection}>
+                    <Text style={styles.sectionTitle}>Initial Payment Slip</Text>
+                    <TouchableOpacity
+                      onPress={() => selectedStudent?.paymentSlipUrl && Linking.openURL(selectedStudent.paymentSlipUrl)}
+                      style={styles.slipPreview}
+                    >
+                      <Image source={{ uri: selectedStudent.paymentSlipUrl }} style={styles.slipImage} />
+                      <View style={styles.slipOverlay}>
+                        <Search size={24} color="#FFF" />
+                        <Text style={styles.slipOverlayText}>Tap to enlarge</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
 
               {/* Action Buttons */}
               <View style={styles.modalActionsContainer}>
                 {activeTab === 'payments' && (
                   <View style={styles.dualActions}>
-                    <TouchableOpacity 
-                      style={[styles.actionBtn, styles.approveBtn]} 
+                    <TouchableOpacity
+                      style={[styles.actionBtn, styles.approveBtn]}
                       onPress={() => handleUpdateStatus(selectedStudent?._id, 'Accepted')}
                       disabled={actionLoading}
                     >
                       <Text style={styles.actionBtnText}>Approve</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.actionBtn, styles.rejectBtn]} 
+                    <TouchableOpacity
+                      style={[styles.actionBtn, styles.rejectBtn]}
                       onPress={() => handleUpdateStatus(selectedStudent?._id, 'Rejected')}
                       disabled={actionLoading}
                     >
@@ -364,19 +354,19 @@ export default function WardenProfiles() {
                 )}
 
                 {activeTab === 'warden' && (
-                  <TouchableOpacity 
-                    style={styles.primaryAction} 
+                  <TouchableOpacity
+                    style={styles.primaryAction}
                     onPress={() => handleUpdateStatus(selectedStudent?._id, 'Activated')}
                     disabled={actionLoading}
                   >
                     {actionLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.primaryActionText}>Activate Profile</Text>}
                   </TouchableOpacity>
                 )}
-                
+
                 {/* General Status Controls for other tabs */}
                 {(activeTab === 'warden' || (selectedStudent?.applicationStatus === 'Activated')) && (
-                  <TouchableOpacity 
-                    style={[styles.secondaryAction, { marginTop: 12 }]} 
+                  <TouchableOpacity
+                    style={[styles.secondaryAction, { marginTop: 12 }]}
                     onPress={() => handleUpdateStatus(selectedStudent?._id, 'Rejected')}
                     disabled={actionLoading}
                   >
@@ -398,12 +388,13 @@ const styles = StyleSheet.create({
   sectionHeader: { paddingHorizontal: 20, marginTop: 20, marginBottom: 16 },
   sectionTitle: { fontSize: 20, fontWeight: '900', color: Colors.text },
   sectionSub: { fontSize: 11, fontWeight: '600', color: Colors.textMuted, marginTop: 2 },
-  subHeaderRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border, marginBottom: 12 },
-  subTabGroup: { flexDirection: 'row', backgroundColor: Colors.background, padding: 4, borderRadius: 12, gap: 4, margin: 16 },
-  miniTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  miniTabActive: { backgroundColor: Colors.roles.warden, elevation: 2, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
-  miniTabText: { fontSize: 12, fontWeight: '700', color: Colors.textMuted },
-  miniTabTextActive: { color: '#FFF' },
+  tabWrapper: { backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  tabScroll: { paddingHorizontal: 16, gap: 24, height: 50 },
+  tabBtn: { paddingVertical: 14, paddingHorizontal: 4, position: 'relative', justifyContent: 'center' },
+  activeTabBtn: {},
+  tabBtnText: { fontSize: 14, fontWeight: '700', color: Colors.textMuted },
+  activeTabBtnText: { color: Colors.roles.warden },
+  activeUnderline: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, backgroundColor: Colors.roles.warden, borderTopLeftRadius: 3, borderTopRightRadius: 3 },
   searchContainer: { padding: 16, backgroundColor: Colors.surface },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, paddingHorizontal: 12, borderRadius: 16, height: 48, borderWidth: 1, borderColor: Colors.border, gap: 10 },
   searchInput: { flex: 1, fontSize: 14, fontWeight: '600' },
@@ -425,7 +416,7 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 100, gap: 12 },
   emptyText: { fontSize: 14, color: Colors.textMuted, fontWeight: '600' },
-  
+
   // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: Colors.background, borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: '90%', padding: 24 },

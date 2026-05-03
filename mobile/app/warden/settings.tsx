@@ -7,7 +7,7 @@ import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 
 export default function WardenSettings() {
-  const { user, token, setUser } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [name, setName] = useState(user?.name || '');
   const [loading, setLoading] = useState(false);
 
@@ -36,6 +36,44 @@ export default function WardenSettings() {
 
     if (!result.canceled) {
       uploadImage(result.assets[0].uri);
+    }
+  };
+
+  const handleProfilePicPress = () => {
+    Alert.alert(
+      'Profile Picture',
+      'Would you like to update or remove your profile picture?',
+      [
+        { text: 'Update Picture', onPress: pickImage },
+        { 
+          text: 'Remove Picture', 
+          onPress: () => {
+            Alert.alert(
+              'Remove Picture',
+              'Are you sure you want to remove your profile picture?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Remove', onPress: removeImage, style: 'destructive' }
+              ]
+            );
+          }, 
+          style: 'destructive' 
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const removeImage = async () => {
+    setLoading(true);
+    try {
+      await api.delete('/users/profile-picture');
+      setUser({ ...user, profilePicture: undefined } as any);
+      Alert.alert('Success', 'Profile picture removed successfully');
+    } catch (err: any) {
+      Alert.alert('Error', 'Failed to remove profile picture');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -87,7 +125,6 @@ export default function WardenSettings() {
     }
   };
 
-  // --- Phone Update Logic ---
   const requestPhoneOTP = async () => {
     if (!/^\d{10}$/.test(phoneState.newPhone)) {
       return Alert.alert('Invalid Input', 'Enter a valid 10-digit number');
@@ -115,8 +152,6 @@ export default function WardenSettings() {
       if (res.data.success) {
         Alert.alert('Success', 'Phone number updated!');
         setPhoneState({ step: 'success', newPhone: '', otp: '', loading: false });
-        // Optionally refresh user here, assuming setUser will be used or they re-login
-        // We might need a generic refresh, but for now just updating the state might not auto-refresh unless authStore has it
       } else {
         Alert.alert('Error', res.data.message || 'Verification failed');
       }
@@ -127,7 +162,6 @@ export default function WardenSettings() {
     }
   };
 
-  // --- Password Update Logic ---
   const requestPwdOTP = async () => {
     if (pwdState.newPwd !== pwdState.confirmPwd) {
       return Alert.alert('Error', 'Passwords do not match');
@@ -183,7 +217,7 @@ export default function WardenSettings() {
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
         <View style={styles.profileSection}>
-          <TouchableOpacity style={styles.avatarContainer} onPress={pickImage} disabled={loading}>
+          <TouchableOpacity style={styles.avatarContainer} onPress={handleProfilePicPress} disabled={loading}>
             <View style={styles.avatar}>
               {user?.profilePicture ? (
                 <Image source={{ uri: user.profilePicture }} style={styles.profileImg} />
@@ -195,6 +229,7 @@ export default function WardenSettings() {
               {loading ? <ActivityIndicator size="small" color="#FFF" /> : <Camera size={16} color="#FFF" />}
             </View>
           </TouchableOpacity>
+          <Text style={styles.userName}>{user?.name}</Text>
           <Text style={styles.emailText}>{user?.email}</Text>
         </View>
 
@@ -466,7 +501,8 @@ const styles = StyleSheet.create({
   profileImg: { width: '100%', height: '100%' },
   avatarText: { fontSize: 32, fontWeight: '800', color: Colors.roles.warden },
   cameraBtn: { position: 'absolute', bottom: -4, right: -4, backgroundColor: Colors.roles.warden, padding: 8, borderRadius: 12, borderWidth: 3, borderColor: '#FFF' },
-  emailText: { fontSize: 14, color: Colors.textMuted, marginTop: 16, fontWeight: '600' },
+  userName: { fontSize: 22, fontWeight: '900', color: Colors.text, marginTop: 16 },
+  emailText: { fontSize: 14, color: Colors.textMuted, marginTop: 4, fontWeight: '600' },
   form: { padding: 24, paddingBottom: 100 },
   label: { fontSize: 13, fontWeight: '700', color: Colors.text, marginBottom: 8, marginTop: 24, textTransform: 'uppercase', letterSpacing: 0.5 },
   inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16, borderWidth: 1, borderColor: Colors.border, gap: 12 },

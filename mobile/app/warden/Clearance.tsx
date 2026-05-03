@@ -205,18 +205,20 @@ export default function Clearance() {
 
               <View style={styles.clearanceContainer}>
                 <View style={styles.clearanceSubTabs}>
-                  <TouchableOpacity 
-                    style={[styles.clearanceSubTab, clearanceSubTab === 'payments' && styles.activeClearanceSubTab]} 
-                    onPress={() => setClearanceSubTab('payments')}
-                  >
-                    <Text style={[styles.clearanceSubTabText, clearanceSubTab === 'payments' && styles.activeClearanceSubTabText]}>Monthly Audit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.clearanceSubTab, clearanceSubTab === 'charges' && styles.activeClearanceSubTab]} 
-                    onPress={() => setClearanceSubTab('charges')}
-                  >
-                    <Text style={[styles.clearanceSubTabText, clearanceSubTab === 'charges' && styles.activeClearanceSubTabText]}>Misc Charges</Text>
-                  </TouchableOpacity>
+                  <View style={styles.pillToggle}>
+                    <TouchableOpacity 
+                      style={[styles.pillBtn, clearanceSubTab === 'payments' && styles.activePillBtn]} 
+                      onPress={() => setClearanceSubTab('payments')}
+                    >
+                      <Text style={[styles.pillBtnText, clearanceSubTab === 'payments' && styles.activePillBtnText]}>Monthly Audit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.pillBtn, clearanceSubTab === 'charges' && styles.activePillBtn]} 
+                      onPress={() => setClearanceSubTab('charges')}
+                    >
+                      <Text style={[styles.pillBtnText, clearanceSubTab === 'charges' && styles.activePillBtnText]}>Misc Charges</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {clearanceSubTab === 'payments' ? (
@@ -376,11 +378,12 @@ const styles = StyleSheet.create({
   profileName: { fontSize: 20, fontWeight: '900', color: Colors.text },
   profileId: { fontSize: 14, color: Colors.textMuted, fontWeight: '700', marginTop: 4 },
   clearanceContainer: { marginTop: 8 },
-  clearanceSubTabs: { flexDirection: 'row', backgroundColor: Colors.background, borderRadius: 12, padding: 4, marginBottom: 20 },
-  clearanceSubTab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
-  activeClearanceSubTab: { backgroundColor: Colors.roles.warden },
-  clearanceSubTabText: { fontSize: 12, fontWeight: '700', color: Colors.textMuted },
-  activeClearanceSubTabText: { color: '#FFF' },
+  clearanceSubTabs: { marginBottom: 20 },
+  pillToggle: { flexDirection: 'row', backgroundColor: Colors.background, padding: 4, borderRadius: 14, gap: 4 },
+  pillBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  activePillBtn: { backgroundColor: Colors.roles.warden, elevation: 4, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
+  pillBtnText: { fontSize: 12, fontWeight: '700', color: Colors.textMuted },
+  activePillBtnText: { color: '#FFF' },
   clearanceContent: { marginBottom: 20 },
   gridHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
   gridHeaderText: { fontSize: 12, fontWeight: '800', color: Colors.roles.warden, textTransform: 'uppercase' },

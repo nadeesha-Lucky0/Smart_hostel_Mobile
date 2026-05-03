@@ -7,7 +7,7 @@ import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 
 export default function AdminSettings() {
-  const { user, token, setUser } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [name, setName] = useState(user?.name || '');
   const [loading, setLoading] = useState(false);
 
@@ -36,6 +36,44 @@ export default function AdminSettings() {
 
     if (!result.canceled) {
       uploadImage(result.assets[0].uri);
+    }
+  };
+
+  const handleProfilePicPress = () => {
+    Alert.alert(
+      'Profile Picture',
+      'Would you like to update or remove your profile picture?',
+      [
+        { text: 'Update Picture', onPress: pickImage },
+        { 
+          text: 'Remove Picture', 
+          onPress: () => {
+            Alert.alert(
+              'Remove Picture',
+              'Are you sure you want to remove your profile picture?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Remove', onPress: removeImage, style: 'destructive' }
+              ]
+            );
+          }, 
+          style: 'destructive' 
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const removeImage = async () => {
+    setLoading(true);
+    try {
+      await api.delete('/users/profile-picture');
+      setUser({ ...user, profilePicture: undefined } as any);
+      Alert.alert('Success', 'Profile picture removed successfully');
+    } catch (err: any) {
+      Alert.alert('Error', 'Failed to remove profile picture');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -87,7 +125,6 @@ export default function AdminSettings() {
     }
   };
 
-  // --- Phone Update Logic ---
   const requestPhoneOTP = async () => {
     if (!/^\d{10}$/.test(phoneState.newPhone)) {
       return Alert.alert('Invalid Input', 'Enter a valid 10-digit number');
@@ -115,8 +152,6 @@ export default function AdminSettings() {
       if (res.data.success) {
         Alert.alert('Success', 'Phone number updated!');
         setPhoneState({ step: 'success', newPhone: '', otp: '', loading: false });
-        // Optionally refresh user here, assuming setUser will be used or they re-login
-        // We might need a generic refresh, but for now just updating the state might not auto-refresh unless authStore has it
       } else {
         Alert.alert('Error', res.data.message || 'Verification failed');
       }
@@ -127,7 +162,6 @@ export default function AdminSettings() {
     }
   };
 
-  // --- Password Update Logic ---
   const requestPwdOTP = async () => {
     if (pwdState.newPwd !== pwdState.confirmPwd) {
       return Alert.alert('Error', 'Passwords do not match');
@@ -183,7 +217,7 @@ export default function AdminSettings() {
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
         <View style={styles.profileSection}>
-          <TouchableOpacity style={styles.avatarContainer} onPress={pickImage} disabled={loading}>
+          <TouchableOpacity style={styles.avatarContainer} onPress={handleProfilePicPress} disabled={loading}>
             <View style={styles.avatar}>
               {user?.profilePicture ? (
                 <Image source={{ uri: user.profilePicture }} style={styles.profileImg} />
@@ -195,6 +229,7 @@ export default function AdminSettings() {
               {loading ? <ActivityIndicator size="small" color="#FFF" /> : <Camera size={16} color="#FFF" />}
             </View>
           </TouchableOpacity>
+          <Text style={styles.userName}>{user?.name}</Text>
           <Text style={styles.emailText}>{user?.email}</Text>
         </View>
 
@@ -404,8 +439,8 @@ export default function AdminSettings() {
 
             {pwdState.step === 'otp' && (
               <View style={styles.modalBody}>
-                <View style={[styles.otpNotice, { backgroundColor: Colors.roles.admin + '10', borderColor: Colors.roles.admin + '30' }]}>
-                  <Text style={[styles.otpNoticeTitle, { color: Colors.roles.admin }]}>Authorization Required</Text>
+                <View style={[styles.otpNotice, { backgroundColor: Colors.roles.warden + '10', borderColor: Colors.roles.warden + '30' }]}>
+                  <Text style={[styles.otpNoticeTitle, { color: Colors.roles.warden }]}>Authorization Required</Text>
                   <Text style={styles.otpNoticeText}>Security code sent to your mobile.</Text>
                 </View>
                 <Text style={styles.modalSubtitle}>Enter Security Code</Text>
@@ -423,7 +458,7 @@ export default function AdminSettings() {
                     <Text style={styles.modalBackBtnText}>Back</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
-                    style={[styles.modalActionBtn, { flex: 1, marginTop: 0, backgroundColor: Colors.roles.admin }, pwdState.loading && styles.disabledBtn]}
+                    style={[styles.modalActionBtn, { flex: 1, marginTop: 0, backgroundColor: Colors.roles.warden }, pwdState.loading && styles.disabledBtn]}
                     onPress={verifyPwdOTP}
                     disabled={pwdState.loading}
                   >
@@ -441,7 +476,7 @@ export default function AdminSettings() {
                 <Text style={styles.successTitle}>Security Updated</Text>
                 <Text style={styles.successText}>Your password has been changed successfully.</Text>
                 <TouchableOpacity 
-                  style={[styles.modalActionBtn, { backgroundColor: Colors.roles.admin }]}
+                  style={[styles.modalActionBtn, { backgroundColor: Colors.roles.warden }]}
                   onPress={() => {
                     setPwdModalVisible(false);
                     setPwdState({ step: 'form', newPwd: '', confirmPwd: '', otp: '', loading: false });
@@ -462,20 +497,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   profileSection: { alignItems: 'center', padding: 40, backgroundColor: Colors.surface, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, elevation: 2 },
   avatarContainer: { position: 'relative' },
-  avatar: { width: 100, height: 100, borderRadius: 32, backgroundColor: Colors.roles.admin + '20', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  avatar: { width: 100, height: 100, borderRadius: 32, backgroundColor: Colors.roles.warden + '20', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   profileImg: { width: '100%', height: '100%' },
-  avatarText: { fontSize: 32, fontWeight: '800', color: Colors.roles.admin },
-  cameraBtn: { position: 'absolute', bottom: -4, right: -4, backgroundColor: Colors.roles.admin, padding: 8, borderRadius: 12, borderWidth: 3, borderColor: '#FFF' },
-  emailText: { fontSize: 14, color: Colors.textMuted, marginTop: 16, fontWeight: '600' },
+  avatarText: { fontSize: 32, fontWeight: '800', color: Colors.roles.warden },
+  cameraBtn: { position: 'absolute', bottom: -4, right: -4, backgroundColor: Colors.roles.warden, padding: 8, borderRadius: 12, borderWidth: 3, borderColor: '#FFF' },
+  userName: { fontSize: 22, fontWeight: '900', color: Colors.text, marginTop: 16 },
+  emailText: { fontSize: 14, color: Colors.textMuted, marginTop: 4, fontWeight: '600' },
   form: { padding: 24, paddingBottom: 100 },
   label: { fontSize: 13, fontWeight: '700', color: Colors.text, marginBottom: 8, marginTop: 24, textTransform: 'uppercase', letterSpacing: 0.5 },
   inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16, borderWidth: 1, borderColor: Colors.border, gap: 12 },
   input: { flex: 1, fontSize: 15, color: Colors.text, fontWeight: '600' },
   inputText: { flex: 1, fontSize: 15, color: Colors.textMuted, fontWeight: '600' },
   disabledInput: { backgroundColor: Colors.background + '80' },
-  linkBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: Colors.roles.admin + '10', borderRadius: 8 },
-  linkText: { fontSize: 12, fontWeight: '700', color: Colors.roles.admin },
-  saveBtn: { backgroundColor: Colors.roles.admin, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, borderRadius: 20, marginTop: 40, gap: 12, elevation: 4, shadowColor: Colors.roles.admin, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  linkBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: Colors.roles.warden + '10', borderRadius: 8 },
+  linkText: { fontSize: 12, fontWeight: '700', color: Colors.roles.warden },
+  saveBtn: { backgroundColor: Colors.roles.warden, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, borderRadius: 20, marginTop: 40, gap: 12, elevation: 4, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   disabledBtn: { opacity: 0.7 },
   saveBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
   // Modal Styles
@@ -487,7 +523,7 @@ const styles = StyleSheet.create({
   modalSubtitle: { fontSize: 13, color: Colors.textMuted, fontWeight: '600', marginBottom: 16 },
   modalInputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, paddingHorizontal: 16, paddingVertical: 16, borderRadius: 16, borderWidth: 1, borderColor: Colors.border, gap: 12 },
   modalInput: { flex: 1, fontSize: 16, color: Colors.text, fontWeight: '600' },
-  modalActionBtn: { backgroundColor: Colors.roles.admin, padding: 18, borderRadius: 16, alignItems: 'center', marginTop: 32 },
+  modalActionBtn: { backgroundColor: Colors.roles.warden, padding: 18, borderRadius: 16, alignItems: 'center', marginTop: 32 },
   modalActionBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
   otpNotice: { backgroundColor: '#6366F110', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#6366F130', marginBottom: 24 },
   otpNoticeTitle: { fontSize: 12, fontWeight: '800', color: '#6366F1', textTransform: 'uppercase', marginBottom: 4 },

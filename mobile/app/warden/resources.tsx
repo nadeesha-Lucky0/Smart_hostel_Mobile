@@ -42,8 +42,17 @@ const { width } = Dimensions.get('window');
 const STATUS_CYCLE = ['AVAILABLE', 'OCCUPIED', 'MISSING'];
 const CA_STATUS_CYCLE = ['AVAILABLE', 'MISSING', 'MAINTENANCE'];
 
-const getNextStatus = (s: string) => STATUS_CYCLE[(STATUS_CYCLE.indexOf(s) + 1) % STATUS_CYCLE.length];
-const getNextCAStatus = (s: string) => CA_STATUS_CYCLE[(CA_STATUS_CYCLE.indexOf(s) + 1) % CA_STATUS_CYCLE.length];
+const getNextStatus = (s: string) => {
+  const current = (s || 'AVAILABLE').toUpperCase();
+  const idx = STATUS_CYCLE.indexOf(current);
+  return STATUS_CYCLE[idx === -1 ? 0 : (idx + 1) % STATUS_CYCLE.length];
+};
+
+const getNextCAStatus = (s: string) => {
+  const current = (s || 'AVAILABLE').toUpperCase();
+  const idx = CA_STATUS_CYCLE.indexOf(current);
+  return CA_STATUS_CYCLE[idx === -1 ? 0 : (idx + 1) % CA_STATUS_CYCLE.length];
+};
 
 const StatusBadge = ({ status, onClick, disabled }: { status: string, onClick?: () => void, disabled?: boolean }) => {
   const getColors = () => {
@@ -120,12 +129,21 @@ const CommonAreasTab = () => {
   };
 
   const handleStatusCycle = async (item: any) => {
+    if (!item?._id) return Alert.alert('Error', 'Item ID missing');
+    
     const newStatus = getNextCAStatus(item.status);
     try {
-      await api.put(`/resources/common-area/${item._id}/status`, { status: newStatus });
+      await api.patch(`/resources/common-area/${item._id}/status`, { status: newStatus });
       setItems(prev => prev.map(i => i._id === item._id ? { ...i, status: newStatus } : i));
     } catch (err: any) {
-      Alert.alert('Error', 'Failed to update status');
+      // Fallback: Try without the /status suffix
+      try {
+        await api.patch(`/resources/common-area/${item._id}`, { status: newStatus });
+        setItems(prev => prev.map(i => i._id === item._id ? { ...i, status: newStatus } : i));
+      } catch (innerErr: any) {
+        const errorMsg = innerErr.response?.data?.message || innerErr.response?.data?.error || 'Failed to update status';
+        Alert.alert('Error', errorMsg);
+      }
     }
   };
 
@@ -470,10 +488,23 @@ const RoomDetailModal = ({ room: initialRoom, floorActive, onClose }: any) => {
     if (!floorActive) return;
     setSaving(goodId);
     try {
-      const res = await api.put(`/rooms/${room._id}/goods/${goodId}`, { bedId, [field]: value });
-      setRoom(res.data);
-    } catch (err) {
-      Alert.alert('Error', 'Failed to update');
+      const res = await api.patch(`/rooms/${room._id}/goods/${goodId}`, { bedId, [field]: value });
+
+      if (res.data && res.data.beds) {
+        setRoom(res.data);
+      } else {
+        setRoom((prev: any) => ({
+          ...prev,
+          beds: prev.beds.map((b: any) => 
+            b.bedId === bedId 
+              ? { ...b, goods: b.goods.map((g: any) => g._id === goodId ? { ...g, [field]: value } : g) }
+              : b
+          )
+        }));
+      }
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to update';
+      Alert.alert('Error', errorMsg);
     } finally {
       setSaving(null);
     }

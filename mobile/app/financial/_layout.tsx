@@ -8,7 +8,9 @@ import {
   Settings,
   LogOut,
   ChevronRight,
-  Wallet
+  Wallet,
+  ArrowLeft,
+  Menu
 } from 'lucide-react-native';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
@@ -108,11 +110,21 @@ export default function FinancialLayout() {
       />
       <Drawer.Screen
         name="settings"
-        options={{
+        options={({ navigation }) => ({
           drawerLabel: 'Settings',
           title: 'Account Settings',
           drawerIcon: ({ color, size }) => <Settings size={size} color={color} />,
-        }}
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => (navigation as any).navigate('dashboard')} style={{ marginLeft: 16 }}>
+              <ArrowLeft size={24} color={Colors.roles.financial} />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity onPress={() => (navigation as any).openDrawer()} style={{ marginRight: 16 }}>
+              <Menu size={24} color={Colors.roles.financial} />
+            </TouchableOpacity>
+          ),
+        })}
       />
     </Drawer>
   );

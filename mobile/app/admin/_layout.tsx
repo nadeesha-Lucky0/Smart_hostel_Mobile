@@ -1,25 +1,21 @@
 import React from 'react';
 import { Drawer } from 'expo-router/drawer';
-import { DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { 
-  LayoutDashboard, 
-  MapPin, 
-  ClipboardList, 
-  DollarSign, 
-  MessageSquare, 
+import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Platform } from 'react-native';
+import {
+  LayoutDashboard,
   Settings,
   LogOut,
-  User,
+  ShieldCheck,
   ArrowLeft,
   Menu
 } from 'lucide-react-native';
 import Colors from '../../constants/Colors';
-import { useAuth } from '../../store/AuthContext';
+import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'expo-router';
 
 function CustomDrawerContent(props: any) {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthStore();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -31,18 +27,21 @@ function CustomDrawerContent(props: any) {
     <DrawerContentScrollView {...props} contentContainerStyle={styles.drawerContainer}>
       <View style={styles.header}>
         <View style={styles.profileContainer}>
-          <View style={styles.avatarContainer}>
+          <View style={styles.profilePicContainer}>
             {user?.profilePicture ? (
-              <Image source={{ uri: user.profilePicture }} style={styles.avatar} />
+              <Image
+                source={{ uri: user.profilePicture }}
+                style={styles.profilePic}
+              />
             ) : (
-              <View style={[styles.avatar, styles.initialsContainer]}>
-                <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'S'}</Text>
+              <View style={[styles.profilePic, styles.initialsContainer]}>
+                <Text style={styles.initialsText}>{user?.name?.charAt(0) || 'A'}</Text>
               </View>
             )}
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName} numberOfLines={1}>{user?.name || 'Student'}</Text>
-            <Text style={styles.profileRole}>Resident Student</Text>
+            <Text style={styles.profileName} numberOfLines={1}>{user?.name || 'Administrator'}</Text>
+            <Text style={styles.profileRole}>System Admin</Text>
           </View>
         </View>
       </View>
@@ -61,7 +60,9 @@ function CustomDrawerContent(props: any) {
   );
 }
 
-export default function StudentLayout() {
+export default function AdminLayout() {
+  const adminColor = Colors.roles.warden;
+
   return (
     <Drawer
       drawerContent={(props) => <CustomDrawerContent {...props} />}
@@ -74,18 +75,19 @@ export default function StudentLayout() {
           borderBottomColor: Colors.border,
         },
         headerTitleStyle: {
-          fontWeight: '800',
-          fontSize: 18,
-          color: Colors.text,
+          fontWeight: '900',
+          fontSize: 20,
+          color: adminColor,
         },
-        headerTintColor: Colors.roles.student,
-        drawerActiveBackgroundColor: Colors.roles.student + '10', // 10% opacity
-        drawerActiveTintColor: Colors.roles.student,
+        headerTitleAlign: 'center',
+        headerTintColor: adminColor,
+        drawerActiveBackgroundColor: adminColor + '10',
+        drawerActiveTintColor: adminColor,
         drawerInactiveTintColor: Colors.textMuted,
         drawerLabelStyle: {
           marginLeft: 8,
           fontSize: 14,
-          fontWeight: '600',
+          fontWeight: '700',
         },
         drawerItemStyle: {
           borderRadius: 12,
@@ -95,59 +97,27 @@ export default function StudentLayout() {
       }}
     >
       <Drawer.Screen
-        name="index"
+        name="dashboard"
         options={{
           drawerLabel: 'Dashboard',
-          title: 'Student Dashboard',
+          title: 'Admin Control',
           drawerIcon: ({ color, size }) => <LayoutDashboard size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="in-out"
-        options={{
-          drawerLabel: 'Entry / Exit',
-          title: 'QR Pass & History',
-          drawerIcon: ({ color, size }) => <MapPin size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="applications"
-        options={{
-          drawerLabel: 'Applications',
-          title: 'My Applications',
-          drawerIcon: ({ color, size }) => <ClipboardList size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="payments"
-        options={{
-          drawerLabel: 'Payments',
-          title: 'Finance & Dues',
-          drawerIcon: ({ color, size }) => <DollarSign size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="complaints"
-        options={{
-          drawerLabel: 'Complaints',
-          title: 'Grievance Portal',
-          drawerIcon: ({ color, size }) => <MessageSquare size={size} color={color} />,
         }}
       />
       <Drawer.Screen
         name="settings"
         options={({ navigation }) => ({
           drawerLabel: 'Settings',
-          title: 'My Profile',
+          title: 'Account Settings',
           drawerIcon: ({ color, size }) => <Settings size={size} color={color} />,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => (navigation as any).navigate('index')} style={{ marginLeft: 16 }}>
-              <ArrowLeft size={24} color={Colors.roles.student} />
+            <TouchableOpacity onPress={() => (navigation as any).navigate('dashboard')} style={{ marginLeft: 16 }}>
+              <ArrowLeft size={24} color={Colors.roles.warden} />
             </TouchableOpacity>
           ),
           headerRight: () => (
             <TouchableOpacity onPress={() => (navigation as any).openDrawer()} style={{ marginRight: 16 }}>
-              <Menu size={24} color={Colors.roles.student} />
+              <Menu size={24} color={Colors.roles.warden} />
             </TouchableOpacity>
           ),
         })}
@@ -163,38 +133,38 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 24,
-    paddingTop: 50,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
     marginBottom: 12,
+    backgroundColor: Colors.roles.warden + '05',
   },
   profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
   },
-  avatarContainer: {
+  profilePicContainer: {
     padding: 2,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: Colors.roles.student + '30',
+    borderColor: Colors.roles.warden + '30',
   },
-  avatar: {
+  profilePic: {
     width: 52,
     height: 52,
     borderRadius: 18,
-    backgroundColor: Colors.roles.student + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+    backgroundColor: Colors.background,
   },
   initialsContainer: {
-    backgroundColor: Colors.roles.student + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.roles.warden + '15',
   },
-  avatarText: {
-    fontSize: 24,
+  initialsText: {
+    fontSize: 22,
     fontWeight: '800',
-    color: Colors.roles.student,
+    color: Colors.roles.warden,
   },
   profileInfo: {
     flex: 1,
@@ -206,7 +176,7 @@ const styles = StyleSheet.create({
   },
   profileRole: {
     fontSize: 12,
-    color: Colors.roles.student,
+    color: Colors.roles.warden,
     fontWeight: '700',
     marginTop: 2,
     textTransform: 'uppercase',
@@ -220,7 +190,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     marginTop: 'auto',
-    marginBottom: 20,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
   logoutButton: {
     flexDirection: 'row',
