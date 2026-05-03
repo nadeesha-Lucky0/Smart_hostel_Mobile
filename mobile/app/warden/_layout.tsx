@@ -2,19 +2,21 @@ import React from 'react';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { 
-  LayoutDashboard, 
-  Layers, 
-  UserCheck, 
-  Users, 
-  Database, 
-  ClipboardList, 
-  Package, 
-  MessageSquare, 
-  Bell, 
+import {
+  LayoutDashboard,
+  Layers,
+  UserCheck,
+  Users,
+  Database,
+  ClipboardList,
+  Package,
+  MessageSquare,
+  Bell,
   Settings,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  ArrowLeft,
+  Menu
 } from 'lucide-react-native';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
@@ -35,9 +37,9 @@ function CustomDrawerContent(props: any) {
         <View style={styles.profileContainer}>
           <View style={styles.profilePicContainer}>
             {user?.profilePicture ? (
-              <Image 
-                source={{ uri: user.profilePicture }} 
-                style={styles.profilePic} 
+              <Image
+                source={{ uri: user.profilePicture }}
+                style={styles.profilePic}
               />
             ) : (
               <View style={[styles.profilePic, styles.initialsContainer]}>
@@ -174,11 +176,21 @@ export default function WardenLayout() {
       />
       <Drawer.Screen
         name="settings"
-        options={{
+        options={({ navigation }) => ({
           drawerLabel: 'Settings',
           title: 'Account Settings',
           drawerIcon: ({ color, size }) => <Settings size={size} color={color} />,
-        }}
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => (navigation as any).navigate('dashboard')} style={{ marginLeft: 16 }}>
+              <ArrowLeft size={24} color={Colors.roles.warden} />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity onPress={() => (navigation as any).openDrawer()} style={{ marginRight: 16 }}>
+              <Menu size={24} color={Colors.roles.warden} />
+            </TouchableOpacity>
+          ),
+        })}
       />
 
       {/* Hide redundant tab-based screens from Drawer */}

@@ -131,22 +131,24 @@ export default function WardenPayment() {
   return (
     <View style={styles.container}>
       <View style={styles.subTabBar}>
-        <TouchableOpacity 
-          style={[styles.subTab, subTab === 'pending' && styles.activeSubTab]} 
-          onPress={() => setSubTab('pending')}
-        >
-          <Text style={[styles.subTabText, subTab === 'pending' && styles.activeSubTabText]}>
-            Pending ({submissions.filter(s => s.status === 'Pending').length})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.subTab, subTab === 'approved' && styles.activeSubTab]} 
-          onPress={() => setSubTab('approved')}
-        >
-          <Text style={[styles.subTabText, subTab === 'approved' && styles.activeSubTabText]}>
-            Approved
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.pillToggle}>
+          <TouchableOpacity 
+            style={[styles.pillBtn, subTab === 'pending' && styles.activePillBtn]} 
+            onPress={() => setSubTab('pending')}
+          >
+            <Text style={[styles.pillBtnText, subTab === 'pending' && styles.activePillBtnText]}>
+              Pending ({submissions.filter(s => s.status === 'Pending').length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.pillBtn, subTab === 'approved' && styles.activePillBtn]} 
+            onPress={() => setSubTab('approved')}
+          >
+            <Text style={[styles.pillBtnText, subTab === 'approved' && styles.activePillBtnText]}>
+              Approved
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.searchContainer}>
@@ -235,11 +237,12 @@ export default function WardenPayment() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  subTabBar: { flexDirection: 'row', padding: 16, gap: 12, backgroundColor: Colors.surface },
-  subTab: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border },
-  activeSubTab: { backgroundColor: Colors.roles.warden, borderColor: Colors.roles.warden },
-  subTabText: { fontSize: 13, fontWeight: '700', color: Colors.textMuted },
-  activeSubTabText: { color: '#FFF' },
+  subTabBar: { padding: 16, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  pillToggle: { flexDirection: 'row', backgroundColor: Colors.background, padding: 4, borderRadius: 14, gap: 4 },
+  pillBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  activePillBtn: { backgroundColor: Colors.roles.warden, elevation: 4, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
+  pillBtnText: { fontSize: 13, fontWeight: '700', color: Colors.textMuted },
+  activePillBtnText: { color: '#FFF' },
   searchContainer: { paddingHorizontal: 16, paddingBottom: 16, backgroundColor: Colors.surface },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, paddingHorizontal: 12, borderRadius: 12, height: 44, borderWidth: 1, borderColor: Colors.border, gap: 10 },
   searchInput: { flex: 1, fontSize: 14, fontWeight: '600' },

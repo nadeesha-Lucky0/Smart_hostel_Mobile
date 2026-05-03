@@ -30,7 +30,7 @@ const DashboardCard = ({ title, value, color, icon: Icon, sub }: any) => (
 );
 
 export default function StudentDashboard() {
-  const { user, login } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [stats, setStats] = useState({ applicationStatus: 'Pending', payments: 'Up to date', lastEntry: 'N/A' });
   const [uploading, setUploading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,6 +62,44 @@ export default function StudentDashboard() {
     }
   };
 
+  const handleProfilePicPress = () => {
+    Alert.alert(
+      'Profile Picture',
+      'Would you like to update or remove your profile picture?',
+      [
+        { text: 'Update Picture', onPress: pickImage },
+        { 
+          text: 'Remove Picture', 
+          onPress: () => {
+            Alert.alert(
+              'Remove Picture',
+              'Are you sure you want to remove your profile picture?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Remove', onPress: removeImage, style: 'destructive' }
+              ]
+            );
+          }, 
+          style: 'destructive' 
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const removeImage = async () => {
+    setUploading(true);
+    try {
+      await api.delete('/users/profile-picture');
+      setUser({ ...user, profilePicture: undefined } as any);
+      Alert.alert('Success', 'Profile picture removed successfully');
+    } catch (error: any) {
+      Alert.alert('Error', 'Failed to remove profile picture');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleUpload = async (uri: string) => {
     setUploading(true);
     const formData = new FormData();
@@ -82,7 +120,7 @@ export default function StudentDashboard() {
 
       if (response.data.success) {
         // Update local auth store with new picture URL
-        await login({ ...user, profilePicture: response.data.profilePicture }, null);
+        setUser({ ...user, profilePicture: response.data.profilePicture } as any);
         Alert.alert('Success', 'Profile picture updated successfully!');
       }
     } catch (error: any) {
@@ -107,7 +145,7 @@ export default function StudentDashboard() {
     >
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity style={styles.profileBtn} onPress={pickImage} disabled={uploading}>
+          <TouchableOpacity style={styles.profileBtn} onPress={handleProfilePicPress} disabled={uploading}>
              <View style={styles.avatarOuter}>
                <View style={styles.avatar}>
                   {user?.profilePicture ? (
@@ -194,14 +232,15 @@ export default function StudentDashboard() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: { padding: 24, paddingBottom: 0, paddingTop: 60 },
-  headerInfo: { marginLeft: 16, marginTop: 10 },
+  headerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+  headerInfo: { marginLeft: 16 },
   greeting: { fontSize: 14, color: Colors.textMuted, fontWeight: '600' },
   name: { fontSize: 20, fontWeight: '800', color: Colors.text },
-  avatarOuter: { padding: 4, borderRadius: 22, borderWidth: 2, borderColor: Colors.roles.student + '40' },
-  avatar: { width: 60, height: 60, borderRadius: 18, backgroundColor: Colors.roles.student + '15', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  avatarOuter: { padding: 4, borderRadius: 40, borderWidth: 2, borderColor: Colors.roles.student + '40' },
+  avatar: { width: 70, height: 70, borderRadius: 35, backgroundColor: Colors.roles.student + '15', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   avatarImage: { width: '100%', height: '100%' },
-  avatarText: { fontSize: 24, fontWeight: '800', color: Colors.roles.student },
-  activeBadge: { position: 'absolute', bottom: 4, right: 4, width: 14, height: 14, borderRadius: 7, backgroundColor: '#10B981', borderWidth: 2, borderColor: '#FFF' },
+  avatarText: { fontSize: 28, fontWeight: '800', color: Colors.roles.student },
+  activeBadge: { position: 'absolute', bottom: 2, right: 2, width: 16, height: 16, borderRadius: 8, backgroundColor: '#10B981', borderWidth: 2, borderColor: '#FFF' },
   profileBtn: { padding: 2 },
   idCard: { backgroundColor: Colors.roles.student, borderRadius: 24, padding: 20, elevation: 8, shadowColor: Colors.roles.student, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15 },
   idHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
