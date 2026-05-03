@@ -14,11 +14,13 @@ import {
   Filter,
   CreditCard,
   MapPin,
-  Clock
+  Clock,
+  Layers,
+  AlertTriangle
 } from 'lucide-react-native';
 import api from '../../services/api';
 
-type AllocationView = 'hub' | 'select_room' | 'confirm';
+type AllocationView = 'hub' | 'select_floor' | 'select_room' | 'select_bed';
 type SubTab = 'pending' | 'allocated';
 
 export default function WardenAllocations() {
@@ -34,6 +36,8 @@ export default function WardenAllocations() {
   
   // Selection states
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [floors, setFloors] = useState<any[]>([]);
+  const [selectedFloor, setSelectedFloor] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [selectedBed, setSelectedBed] = useState<string | null>(null);
 
@@ -57,10 +61,25 @@ export default function WardenAllocations() {
     }
   };
 
-  const fetchAvailableRooms = async (wing: string) => {
+  const fetchFloors = async (wing: string) => {
     try {
       setLoading(true);
-      const res = await api.get(`/rooms?wing=${wing}&activeOnly=true`);
+      const res = await api.get(`/floors?wing=${wing}`);
+      // Filter for active floors only
+      const activeFloors = res.data.filter((f: any) => f.isactive);
+      setFloors(activeFloors);
+    } catch (err) {
+      console.error('Fetch floors error:', err);
+      Alert.alert('Error', 'Failed to fetch floors');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAvailableRooms = async (floorId: string) => {
+    try {
+      setLoading(true);
+      const res = await api.get(`/rooms?floor=${floorId}&activeOnly=true`);
       // Filter rooms that have at least one available bed
       const available = res.data.filter((r: any) => r.beds.some((b: any) => !b.isOccupied));
       setRooms(available);
@@ -73,16 +92,26 @@ export default function WardenAllocations() {
 
   const handleStartAllocation = (student: any) => {
     setSelectedStudent(student);
+    setView('select_floor');
+    fetchFloors(student.wing);
+  };
+
+  const handleSelectFloor = (floor: any) => {
+    setSelectedFloor(floor);
     setView('select_room');
-    fetchAvailableRooms(student.wing);
+    fetchAvailableRooms(floor._id);
   };
 
   const handleSelectRoom = (room: any) => {
     setSelectedRoom(room);
-    // Auto-select first available bed
-    const firstBed = room.beds.find((b: any) => !b.isOccupied);
-    if (firstBed) setSelectedBed(firstBed.bedId);
-    setView('confirm');
+    // Pre-select first available bed if any
+    const firstAvailable = room.beds.find((b: any) => !b.isOccupied);
+    if (firstAvailable) setSelectedBed(firstAvailable.bedId);
+    setView('select_bed');
+  };
+
+  const handleSelectBed = (bedId: string) => {
+    setSelectedBed(bedId);
   };
 
   const handleFinalizeAllocation = async () => {
@@ -107,6 +136,8 @@ export default function WardenAllocations() {
   const resetAllocation = () => {
     setView('hub');
     setSelectedStudent(null);
+    setFloors([]);
+    setSelectedFloor(null);
     setSelectedRoom(null);
     setSelectedBed(null);
   };
@@ -131,8 +162,9 @@ export default function WardenAllocations() {
   };
 
   // Sub-components for different views
-  const renderHub = () => (
-    <View style={styles.container}>
+  function renderHub() {
+    return (
+      <View style={styles.container}>
       {/* Header & Filters */}
       <View style={styles.headerContainer}>
         <View style={styles.searchBar}>
@@ -190,6 +222,7 @@ export default function WardenAllocations() {
         </View>
       ) : (
         <FlatList 
+          key="hub-students-list"
           data={filteredStudents}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContent}
@@ -251,17 +284,84 @@ export default function WardenAllocations() {
         />
       )}
     </View>
-  );
+    );
+  }
 
-  const renderRoomSelection = () => (
-    <View style={styles.container}>
+  function renderFloorSelection() {
+    return (
+      <View style={styles.container}>
       <View style={styles.subHeader}>
         <TouchableOpacity onPress={() => setView('hub')} style={styles.backBtn}>
           <ArrowLeft size={24} color={Colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Select Room</Text>
+          <Text style={styles.headerTitle}>Select Floor</Text>
           <Text style={styles.headerSub} numberOfLines={1}>Assigning to {selectedStudent?.name}</Text>
+        </View>
+      </View>
+
+      {loading ? (
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color={Colors.roles.warden} />
+          <Text style={styles.loadingText}>Fetching Active Floors...</Text>
+        </View>
+      ) : (
+        <FlatList 
+          key="allocation-floor-list"
+          data={floors}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.floorCard} onPress={() => handleSelectFloor(item)}>
+              <View style={styles.floorHeader}>
+                <View style={styles.floorIconBox}>
+                  <Layers size={22} color={Colors.roles.warden} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.floorTitle}>Floor {item.floorNumber}</Text>
+                  <Text style={styles.floorSub}>{item.floorID}</Text>
+                </View>
+                <ChevronRight size={20} color={Colors.textMuted} />
+              </View>
+              <View style={styles.floorStatsRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>ROOMS</Text>
+                  <Text style={styles.statValue}>{item.numberOfRooms || '19'}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>WING</Text>
+                  <Text style={[styles.statValue, { color: selectedStudent?.wing === 'male' ? '#3B82F6' : '#EC4899' }]}>
+                    {selectedStudent?.wing?.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <AlertTriangle size={40} color={Colors.textMuted} />
+              <Text style={styles.emptyText}>No active floors found for this wing</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => fetchFloors(selectedStudent?.wing)}>
+                <Text style={styles.retryBtnText}>Retry Fetch</Text>
+              </TouchableOpacity>
+            </View>
+          }
+        />
+      )}
+    </View>
+    );
+  }
+
+  function renderRoomSelection() {
+    return (
+      <View style={styles.container}>
+      <View style={styles.subHeader}>
+        <TouchableOpacity onPress={() => setView('select_floor')} style={styles.backBtn}>
+          <ArrowLeft size={24} color={Colors.text} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Select Room</Text>
+          <Text style={styles.headerSub} numberOfLines={1}>Floor {selectedFloor?.floorNumber} • {selectedStudent?.name}</Text>
         </View>
       </View>
 
@@ -269,6 +369,7 @@ export default function WardenAllocations() {
         <ActivityIndicator style={{ marginTop: 40 }} color={Colors.roles.warden} />
       ) : (
         <FlatList 
+          key="allocation-room-grid"
           data={rooms}
           numColumns={2}
           keyExtractor={(item) => item._id}
@@ -290,69 +391,105 @@ export default function WardenAllocations() {
         />
       )}
     </View>
-  );
+    );
+  }
 
-  const renderConfirmation = () => (
-    <View style={styles.container}>
-      <View style={styles.subHeader}>
-        <TouchableOpacity onPress={() => setView('select_room')} style={styles.backBtn}>
-          <ArrowLeft size={24} color={Colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Confirm Allocation</Text>
-      </View>
-
-      <View style={styles.confirmContent}>
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <View style={styles.iconBox}>
-              <Users size={20} color={Colors.roles.warden} />
-            </View>
-            <View style={styles.summaryInfo}>
-              <Text style={styles.summaryLabel}>Student</Text>
-              <Text style={styles.summaryValue}>{selectedStudent?.name}</Text>
-              <Text style={styles.summaryDetail}>{selectedStudent?.rollNumber} • {selectedStudent?.wing?.toUpperCase()}</Text>
-            </View>
-          </View>
-          
-          <View style={[styles.summaryRow, { marginTop: 24 }]}>
-            <View style={styles.iconBox}>
-              <BedDouble size={20} color={Colors.roles.warden} />
-            </View>
-            <View style={styles.summaryInfo}>
-              <Text style={styles.summaryLabel}>Room & Bed</Text>
-              <Text style={styles.summaryValue}>
-                Room {selectedStudent?.wing === 'female' ? 'F' : 'M'}{selectedRoom?.roomnumber} • Bed {selectedBed}
-              </Text>
-              <Text style={styles.summaryDetail}>{selectedRoom?.type} Room</Text>
-            </View>
+  function renderBedSelection() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => setView('select_room')} style={styles.backBtn}>
+            <ArrowLeft size={24} color={Colors.text} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Select Bed</Text>
+            <Text style={styles.headerSub} numberOfLines={1}>
+              Assigning to {selectedStudent?.name}
+            </Text>
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.finalizeBtn, loading && styles.disabledBtn]} 
-          onPress={handleFinalizeAllocation}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <>
-              <Check size={20} color="#FFF" />
-              <Text style={styles.finalizeBtnText}>Finalize Allocation</Text>
-            </>
-          )}
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.cancelBtn} onPress={resetAllocation} disabled={loading}>
-          <Text style={styles.cancelBtnText}>Cancel</Text>
-        </TouchableOpacity>
+        <ScrollView contentContainerStyle={styles.bedSelectionContent}>
+          {/* Unified Summary & Selection Card */}
+          <View style={styles.roomInfoCard}>
+             <View style={styles.roomInfoTop}>
+                <View style={styles.roomBadge}>
+                   <BedDouble size={24} color={Colors.roles.warden} />
+                </View>
+                <View>
+                   <Text style={styles.roomInfoTitle}>
+                     Room {selectedStudent?.wing === 'female' ? 'F' : 'M'}{selectedRoom?.roomnumber}
+                   </Text>
+                   <Text style={styles.roomInfoSub}>Floor {selectedFloor?.floorNumber} • {selectedRoom?.type} Room</Text>
+                </View>
+             </View>
+             
+             <View style={styles.cardDivider} />
+             
+             <Text style={styles.sectionLabel}>AVAILABLE BEDS</Text>
+             <View style={styles.bedOptionsGrid}>
+                {selectedRoom?.beds.map((bed: any) => (
+                  <TouchableOpacity 
+                    key={bed.bedId}
+                    disabled={bed.isOccupied}
+                    onPress={() => handleSelectBed(bed.bedId)}
+                    style={[
+                      styles.bedOptionCard,
+                      bed.isOccupied && styles.bedOptionDisabled,
+                      selectedBed === bed.bedId && styles.bedOptionSelected
+                    ]}
+                  >
+                    <View style={[
+                      styles.bedIconBox,
+                      bed.isOccupied ? styles.bedIconOccupied : (selectedBed === bed.bedId ? styles.bedIconSelected : styles.bedIconAvailable)
+                    ]}>
+                      {bed.isOccupied ? <X size={20} color="#EF4444" /> : <Check size={20} color={selectedBed === bed.bedId ? '#FFF' : '#10B981'} />}
+                    </View>
+                    <Text style={styles.bedOptionId}>Bed {bed.bedId}</Text>
+                    <Text style={[
+                      styles.bedOptionStatus,
+                      { color: bed.isOccupied ? '#EF4444' : (selectedBed === bed.bedId ? Colors.roles.warden : '#10B981') }
+                    ]}>
+                      {bed.isOccupied ? 'Occupied' : (selectedBed === bed.bedId ? 'Selected' : 'Available')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+             </View>
+          </View>
+
+          <View style={styles.actionContainer}>
+            <TouchableOpacity 
+              style={[styles.finalizeBtn, (!selectedBed || loading) && styles.disabledBtn]} 
+              onPress={handleFinalizeAllocation}
+              disabled={!selectedBed || loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <>
+                  <Check size={20} color="#FFF" />
+                  <Text style={styles.finalizeBtnText}>Finalize Allocation</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.cancelBtn} 
+              onPress={() => setView('select_room')} 
+              disabled={loading}
+            >
+              <Text style={styles.cancelBtnText}>Back to Room Selection</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
-    </View>
-  );
+    );
+  }
 
   switch (view) {
+    case 'select_floor': return renderFloorSelection();
     case 'select_room': return renderRoomSelection();
-    case 'confirm': return renderConfirmation();
+    case 'select_bed': return renderBedSelection();
     default: return renderHub();
   }
 }
@@ -720,5 +857,183 @@ const styles = StyleSheet.create({
   },
   disabledBtn: {
     opacity: 0.6,
+  },
+  floorCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  floorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 16,
+  },
+  floorIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.roles.warden + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floorTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  floorSub: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textMuted,
+  },
+  floorStatsRow: {
+    flexDirection: 'row',
+    gap: 24,
+    paddingHorizontal: 4,
+  },
+  statItem: {
+    alignItems: 'flex-start',
+    gap: 2,
+  },
+  statLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: Colors.textMuted,
+    letterSpacing: 1,
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  retryBtn: {
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: Colors.roles.warden,
+  },
+  retryBtnText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  bedSelectionContent: {
+    padding: 20,
+    gap: 20,
+  },
+  roomInfoCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  roomInfoTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 24,
+  },
+  roomBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: Colors.roles.warden + '10',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roomInfoTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: Colors.text,
+  },
+  roomInfoSub: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textMuted,
+    textTransform: 'capitalize',
+  },
+  bedOptionsGrid: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  bedOptionCard: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.border,
+  },
+  bedOptionSelected: {
+    borderColor: Colors.roles.warden,
+    backgroundColor: Colors.roles.warden + '05',
+  },
+  bedOptionDisabled: {
+    opacity: 0.5,
+    backgroundColor: '#F1F5F9',
+  },
+  bedIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  bedIconAvailable: {
+    backgroundColor: '#10B98115',
+  },
+  bedIconSelected: {
+    backgroundColor: Colors.roles.warden,
+  },
+  bedIconOccupied: {
+    backgroundColor: '#EF444415',
+  },
+  bedOptionId: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: Colors.text,
+  },
+  bedOptionStatus: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: Colors.textMuted,
+    letterSpacing: 1.2,
+    marginBottom: 16,
+    textTransform: 'uppercase',
+  },
+  actionContainer: {
+    marginTop: 10,
+    gap: 4,
+  },
+  bedGuidance: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 8,
+  },
+  guidanceText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.textMuted,
+    flex: 1,
   },
 });

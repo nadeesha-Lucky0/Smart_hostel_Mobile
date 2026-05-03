@@ -11,7 +11,7 @@ import {
   Modal,
   ScrollView,
 } from 'react-native';
-import Colors from '../constants/Colors';
+import Colors from '../../constants/Colors';
 import {
   Search,
   CheckCircle,
@@ -24,7 +24,7 @@ import {
   GraduationCap,
   ChevronRight,
 } from 'lucide-react-native';
-import api from '../services/api';
+import api from '../../services/api';
 
 /**
  * REFERENCE FILE - Not Used in Active Routes

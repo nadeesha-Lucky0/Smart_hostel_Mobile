@@ -228,20 +228,24 @@ export default function HostelRecords() {
 
               <Text style={styles.sectionTitle}>Target Room</Text>
               <View style={styles.roomsGrid}>
-                {rooms.map(r => (
-                  <TouchableOpacity 
-                    key={r._id} 
-                    style={[styles.roomSelectorItem, selectedRoomId === r._id && styles.activeRoomSelectorItem]}
-                    onPress={() => {
-                      setSelectedRoomId(r._id);
-                      setSelectedBedId('');
-                    }}
-                  >
-                    <Text style={[styles.roomSelectorText, selectedRoomId === r._id && styles.activeRoomSelectorText]}>Room {r.roomnumber}</Text>
-                    <Text style={styles.roomTypeText}>{r.type}</Text>
-                    {selectedRoomId === r._id && <View style={styles.checkIcon}><Check size={12} color="#FFF" /></View>}
-                  </TouchableOpacity>
-                ))}
+                {rooms.map(r => {
+                  const isAvailable = r.beds.some((b: any) => !b.isOccupied || b.student === editingAllocation?.studentId);
+                  return (
+                    <TouchableOpacity 
+                      key={r._id} 
+                      style={[styles.roomSelectorItem, selectedRoomId === r._id && styles.activeRoomSelectorItem]}
+                      onPress={() => {
+                        setSelectedRoomId(r._id);
+                        setSelectedBedId('');
+                      }}
+                    >
+                      <View style={[styles.roomStatusDot, { backgroundColor: isAvailable ? '#10B981' : '#EF4444' }]} />
+                      <Text style={[styles.roomSelectorText, selectedRoomId === r._id && styles.activeRoomSelectorText]}>Room {r.roomnumber}</Text>
+                      <Text style={styles.roomTypeText}>{r.type}</Text>
+                      {selectedRoomId === r._id && <View style={styles.checkIcon}><Check size={12} color="#FFF" /></View>}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
               {selectedRoomId && (
@@ -255,6 +259,7 @@ export default function HostelRecords() {
                       const bedData = roomData?.beds.find((b: any) => b.bedId === bid);
                       const isOccupied = bedData?.isOccupied && bedData?.student !== editingAllocation?.studentId;
                       const isCurrent = bedData?.student === editingAllocation?.studentId;
+                      const isSelected = selectedBedId === bid;
 
                       return (
                         <TouchableOpacity 
@@ -262,14 +267,24 @@ export default function HostelRecords() {
                           disabled={isOccupied}
                           style={[
                             styles.bedSelectorItem, 
-                            selectedBedId === bid && styles.activeBedSelectorItem,
+                            isSelected && styles.activeBedSelectorItem,
                             isOccupied && styles.occupiedBedItem
                           ]}
                           onPress={() => setSelectedBedId(bid)}
                         >
-                          <Text style={[styles.bedSelectorText, selectedBedId === bid && styles.activeBedSelectorText]}>Bed {bid}</Text>
-                          {isCurrent && <Text style={styles.currentBedLabel}>Current</Text>}
-                          {isOccupied && <Text style={styles.occupiedBedLabel}>Occupied</Text>}
+                          <View style={[
+                            styles.bedIconBox,
+                            isOccupied ? styles.bedIconOccupied : (isSelected ? styles.bedIconSelected : (isCurrent ? styles.bedIconCurrent : styles.bedIconAvailable))
+                          ]}>
+                            {isOccupied ? <X size={18} color="#EF4444" /> : <Check size={18} color={isSelected ? '#FFF' : (isCurrent ? Colors.roles.warden : '#10B981')} />}
+                          </View>
+                          <Text style={[styles.bedSelectorText, isSelected && styles.activeBedSelectorText]}>Bed {bid}</Text>
+                          <Text style={[
+                            styles.bedOptionStatus,
+                            { color: isOccupied ? '#EF4444' : (isSelected ? Colors.roles.warden : (isCurrent ? Colors.roles.warden : '#10B981')) }
+                          ]}>
+                            {isOccupied ? 'Occupied' : (isCurrent ? 'Current' : (isSelected ? 'Selected' : 'Available'))}
+                          </Text>
                         </TouchableOpacity>
                       );
                     })}
@@ -336,21 +351,43 @@ const styles = StyleSheet.create({
   activeSelectorItem: { backgroundColor: Colors.roles.warden, borderColor: Colors.roles.warden },
   selectorText: { fontSize: 14, fontWeight: '700', color: Colors.textMuted },
   activeSelectorText: { color: '#FFF' },
-  roomsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  roomSelectorItem: { width: '30%', backgroundColor: Colors.background, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', position: 'relative' },
-  activeRoomSelectorItem: { borderColor: Colors.roles.warden, backgroundColor: Colors.roles.warden + '05' },
+  roomsGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 10,
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  roomSelectorItem: { 
+    width: '30%', 
+    backgroundColor: Colors.background, 
+    paddingVertical: 14, 
+    paddingHorizontal: 4, 
+    borderRadius: 18, 
+    borderWidth: 1, 
+    borderColor: Colors.border, 
+    alignItems: 'center', 
+    position: 'relative', 
+    marginBottom: 2 
+  },
+  activeRoomSelectorItem: { borderColor: Colors.roles.warden, backgroundColor: Colors.roles.warden + '05', borderWidth: 2 },
+  roomStatusDot: { position: 'absolute', top: 8, left: 8, width: 6, height: 6, borderRadius: 3 },
   roomSelectorText: { fontSize: 13, fontWeight: '800', color: Colors.text },
   activeRoomSelectorText: { color: Colors.roles.warden },
-  roomTypeText: { fontSize: 9, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', marginTop: 2 },
+  roomTypeText: { fontSize: 8, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', marginTop: 2 },
   checkIcon: { position: 'absolute', top: -5, right: -5, backgroundColor: Colors.roles.warden, borderRadius: 8, width: 18, height: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.surface },
   bedsRow: { flexDirection: 'row', gap: 16 },
-  bedSelectorItem: { flex: 1, backgroundColor: Colors.background, padding: 20, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
+  bedSelectorItem: { flex: 1, backgroundColor: Colors.background, padding: 16, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
   activeBedSelectorItem: { borderColor: Colors.roles.warden, backgroundColor: Colors.roles.warden + '05', borderWidth: 2 },
-  occupiedBedItem: { opacity: 0.4, backgroundColor: Colors.border + '20' },
+  occupiedBedItem: { opacity: 0.5, backgroundColor: '#F1F5F9' },
+  bedIconBox: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  bedIconAvailable: { backgroundColor: '#10B98115' },
+  bedIconSelected: { backgroundColor: Colors.roles.warden },
+  bedIconCurrent: { backgroundColor: Colors.roles.warden + '15' },
+  bedIconOccupied: { backgroundColor: '#EF444415' },
   bedSelectorText: { fontSize: 15, fontWeight: '800', color: Colors.text },
   activeBedSelectorText: { color: Colors.roles.warden },
-  currentBedLabel: { fontSize: 9, fontWeight: '800', color: Colors.roles.warden, marginTop: 4, textTransform: 'uppercase' },
-  occupiedBedLabel: { fontSize: 9, fontWeight: '800', color: '#EF4444', marginTop: 4, textTransform: 'uppercase' },
+  bedOptionStatus: { fontSize: 10, fontWeight: '700', marginTop: 2 },
   updateBtn: { backgroundColor: Colors.roles.warden, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginTop: 40, elevation: 4, shadowColor: Colors.roles.warden, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   updateBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });

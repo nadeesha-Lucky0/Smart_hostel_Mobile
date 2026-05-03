@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // Render Backend URL (loaded from .env)
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://hostel-001.onrender.com/api'; 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://smart-hostel-mobile.onrender.com/api'; 
 
 const api = axios.create({
   baseURL: API_BASE_URL,
