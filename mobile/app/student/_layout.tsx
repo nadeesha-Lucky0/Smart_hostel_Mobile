@@ -13,11 +13,11 @@ import {
   User
 } from 'lucide-react-native';
 import Colors from '../../constants/Colors';
-import { useAuthStore } from '../../store/authStore';
+import { useAuth } from '../../store/AuthContext';
 import { useRouter } from 'expo-router';
 
 function CustomDrawerContent(props: any) {
-  const { user, logout } = useAuthStore();
+  const { user, logout } = useAuth();
   const router = useRouter();
 
   const handleLogout = async () => {

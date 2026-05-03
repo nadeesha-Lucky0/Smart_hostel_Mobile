@@ -1,40 +1,83 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Render Backend URL (loaded from .env)
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://smart-hostel-mobile.onrender.com/api'; 
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://hostel-001.onrender.com';
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+const apiClient = axios.create({
+  baseURL: `${API_URL}/api`,
+  timeout: 15000,
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Add a request interceptor to add the auth token to every request
-api.interceptors.request.use(
-  async (config) => {
-    const token = await SecureStore.getItemAsync('user_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// Attach token to every request
+apiClient.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem('hostel_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  return config;
+}, (error) => Promise.reject(error));
 
-// Add a response interceptor to handle errors (e.g., token expiration)
-api.interceptors.response.use(
+// Global response interceptor for Auth errors
+apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized (e.g., redirect to login)
-      await SecureStore.deleteItemAsync('user_token');
+      // Clear token if server says 401
+      await AsyncStorage.removeItem('hostel_token');
+      await AsyncStorage.removeItem('hostel_user');
+      // Optional: You could trigger a global 'logout' event here
     }
     return Promise.reject(error);
   }
 );
 
-export default api;
+// Auth
+export const authAPI = {
+  login: (email: string, password: string) =>
+    apiClient.post('/auth/login', { email, password }),
+  register: (data: object) => apiClient.post('/auth/register', data),
+  sendSignupOtp: (email: string) => apiClient.post('/auth/send-signup-otp', { email }),
+  verifySignupOtp: (email: string, otp: string) => apiClient.post('/auth/verify-signup-otp', { email, otp }),
+  forgotPassword: (data: object) => apiClient.post('/auth/forgot-password', data),
+  resetPassword: (email: string, otp: string) => apiClient.post('/auth/reset-password', { email, otp }),
+  getProfile: () => apiClient.get('/users/profile'),
+};
+
+// Stats
+export const statsAPI = {
+  getStats: () => apiClient.get('/allocations/stats'),
+  getOverview: () => apiClient.get('/allocations/stats'),
+};
+
+// Rooms
+export const roomsAPI = {
+  getRooms: (params = {}) => apiClient.get('/rooms', { params }),
+  getRoom: (id: string) => apiClient.get(`/rooms/${id}`),
+};
+
+// Allocations
+export const allocationsAPI = {
+  getAllocations: (params = {}) => apiClient.get('/allocations', { params }),
+  getMyAllocation: () => apiClient.get('/allocations/me'),
+};
+
+// Notices
+export const noticesAPI = {
+  getNotices: () => apiClient.get('/notices'),
+};
+
+// Students / Applications
+export const applicationsAPI = {
+  getApplications: (params = {}) => apiClient.get('/applications', { params }),
+  getMyApplication: () => apiClient.get('/applications/me'),
+  getStudentStatus: () => apiClient.get('/student-payments/status'),
+};
+
+// Financial
+export const financialAPI = {
+  getRefundable: () => apiClient.get('/financial/refundable'),
+  getClearances: () => apiClient.get('/clearance/warden'),
+};
+
+export default apiClient;

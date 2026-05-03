@@ -1,151 +1,231 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Alert, Image, ImageBackground } from 'react-native';
-import { useRouter, Link } from 'expo-router';
-import { useAuthStore } from '../../store/authStore';
-import Colors from '../../constants/Colors';
-import { Lock, Mail, Eye, EyeOff } from 'lucide-react-native';
-import api from '../../services/api';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+  ScrollView, Dimensions, SafeAreaView, Modal, Image
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../store/AuthContext';
+import { Colors, Typography, Spacing } from '../../constants/Colors';
 
+const { width } = Dimensions.get('window');
+
+/**
+ * LoginScreen Component
+ * Professional login interface for the hostel management system.
+ * Updated with standardized navigation paths.
+ */
 export default function LoginScreen() {
   const router = useRouter();
-  const login = useAuthStore((state) => state.login);
-
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  
+  // Forgot Password States
+  const [forgotModal, setForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('Please enter both email and password');
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-
     setLoading(true);
-    setError('');
-
     try {
-      const response = await api.post('/auth/login', { email, password });
-
-      if (response.data.success) {
-        const { token, ...userData } = response.data.data;
-        await login(userData, token);
-        router.replace('/');
-      } else {
-        setError(response.data.message || 'Login failed');
-      }
+      await login(email, password);
+      // AuthContext handles redirection to (tabs)
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Invalid credentials or server error';
-      setError(msg);
-      Alert.alert('Login Error', msg);
+      Alert.alert('Login Failed', err.response?.data?.message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <ImageBackground
-      source={require('../../assets/hostel_bg.jpg')}
-      style={styles.container}
-    >
-      <View style={styles.overlay}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <View style={styles.header}>
-              <Image
-                source={require('../../assets/logo.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-              <Text style={styles.title}>SLIIT Kandy Uni Hostel</Text>
-              <Text style={styles.subtitle}>Smart Hostel Management System</Text>
-            </View>
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) return;
+    setForgotLoading(true);
+    // Simulating API call
+    setTimeout(() => {
+      setForgotLoading(false);
+      setForgotModal(false);
+      Alert.alert('Success', 'If an account exists with this email, you will receive reset instructions.');
+    }, 1500);
+  };
 
-            <View style={styles.form}>
-              <Text style={styles.label}>Email Address</Text>
-              <View style={styles.inputContainer}>
-                <Mail size={20} color={Colors.textMuted} style={styles.icon} />
+  return (
+    <SafeAreaView style={s.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Logo & Welcome */}
+          <View style={s.heroSection}>
+            <Image 
+              source={require('../../assets/images/idHsN22NWk_logos.png')} 
+              style={s.logo} 
+              resizeMode="contain" 
+            />
+            <Text style={s.title}>Welcome Back</Text>
+            <Text style={s.subtitle}>Hostel Management System</Text>
+          </View>
+
+          {/* Form */}
+          <View style={s.form}>
+            <View style={s.inputGroup}>
+              <Text style={s.label}>Student Email</Text>
+              <View style={s.inputContainer}>
+                <Ionicons name="mail-outline" size={20} color={Colors.textMuted} />
                 <TextInput
-                  style={styles.input}
-                  placeholder="itxxxxxxxx@my.sliit.lk"
+                  style={s.input}
+                  placeholder="ITXXXXXXXX@my.sliit.lk"
+                  placeholderTextColor={Colors.textMuted}
                   value={email}
                   onChangeText={setEmail}
-                  keyboardType="email-address"
                   autoCapitalize="none"
+                  keyboardType="email-address"
                 />
               </View>
+            </View>
 
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputContainer}>
-                <Lock size={20} color={Colors.textMuted} style={styles.icon} />
+            <View style={s.inputGroup}>
+              <View style={s.row}>
+                <Text style={s.label}>Password</Text>
+                <TouchableOpacity onPress={() => setForgotModal(true)}>
+                  <Text style={s.forgotText}>Forgot Password?</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={s.inputContainer}>
+                <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} />
                 <TextInput
-                  style={styles.input}
+                  style={s.input}
                   placeholder="••••••••"
+                  placeholderTextColor={Colors.textMuted}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  {showPassword ? (
-                    <EyeOff size={20} color={Colors.textMuted} />
-                  ) : (
-                    <Eye size={20} color={Colors.textMuted} />
-                  )}
+                  <Ionicons 
+                    name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                    size={20} 
+                    color={Colors.textMuted} 
+                  />
                 </TouchableOpacity>
               </View>
-
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-              <TouchableOpacity
-                style={[styles.loginButton, loading && styles.disabledButton]}
-                onPress={handleLogin}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Sign In</Text>
-                )}
-              </TouchableOpacity>
-
-              <View style={styles.signupContainer}>
-                <Text style={styles.signupText}>Don't have an account? </Text>
-                <Link href="/(auth)/register" asChild>
-                  <TouchableOpacity>
-                    <Text style={styles.signupLink}>Sign Up</Text>
-                  </TouchableOpacity>
-                </Link>
-              </View>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
-    </ImageBackground>
+
+            <TouchableOpacity 
+              style={[s.loginBtn, loading && s.btnDisabled]} 
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={s.loginBtnText}>Sign In</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={s.footer}>
+              <Text style={s.footerText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
+                <Text style={s.signupText}>Create Account</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Forgot Password Modal */}
+      <Modal visible={forgotModal} transparent animationType="fade">
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <Text style={s.modalTitle}>Reset Password</Text>
+            <Text style={s.modalSubtitle}>Enter your student email to receive recovery instructions.</Text>
+            <TextInput
+              style={s.modalInput}
+              placeholder="ITXXXXXXXX@my.sliit.lk"
+              placeholderTextColor={Colors.textMuted}
+              value={forgotEmail}
+              onChangeText={setForgotEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <View style={s.modalButtons}>
+              <TouchableOpacity style={s.cancelBtn} onPress={() => setForgotModal(false)}>
+                <Text style={s.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={s.submitBtn} 
+                onPress={handleForgotPassword}
+                disabled={forgotLoading}
+              >
+                {forgotLoading ? <ActivityIndicator color="#fff" /> : <Text style={s.submitBtnText}>Send</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  scrollContent: { flexGrow: 1, padding: 24, justifyContent: 'center' },
-  header: { marginBottom: 32, alignItems: 'center' },
-  logo: { width: '80%', height: 120, marginBottom: 12 },
-  title: { fontSize: 24, fontWeight: '900', color: '#FFF', letterSpacing: -0.5, textAlign: 'center' },
-  subtitle: { fontSize: 14, color: 'rgba(255, 255, 255, 0.8)', marginTop: 4, fontWeight: '600' },
-  form: { backgroundColor: 'rgba(255,255,255,0.70)', padding: 24, borderRadius: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', elevation: 0, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20 },
-  label: { fontSize: 13, fontWeight: '800', color: '#1F2937', marginBottom: 8, marginTop: 16, textTransform: 'uppercase', letterSpacing: 1 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)', borderRadius: 16, paddingHorizontal: 16, height: 56, backgroundColor: 'rgba(255,255,255,0.9)' },
-  icon: { marginRight: 12 },
-  input: { flex: 1, fontSize: 16, color: '#111827', fontWeight: '700' },
-  errorText: { color: Colors.danger, marginTop: 12, fontSize: 14, textAlign: 'center', fontWeight: '700' },
-  loginButton: { backgroundColor: Colors.primary, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 32, elevation: 4 },
-  disabledButton: { opacity: 0.7 },
-  loginButtonText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-  signupContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
-  signupText: { color: '#4B5563', fontSize: 14, fontWeight: '600' },
-  signupLink: { color: Colors.primary, fontWeight: '900', fontSize: 14, textDecorationLine: 'underline' },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.bg },
+  scrollContent: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xl },
+  heroSection: { alignItems: 'center', marginBottom: Spacing.xl, marginTop: Spacing.lg },
+  logo: { width: 120, height: 120, marginBottom: Spacing.md },
+  title: { fontSize: Typography['3xl'], fontWeight: '900', color: '#fff', textAlign: 'center' },
+  subtitle: { fontSize: Typography.sm, color: Colors.textMuted, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, textAlign: 'center' },
+
+  form: { gap: Spacing.lg },
+  inputGroup: { gap: 8 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  label: { fontSize: Typography.sm, fontWeight: '700', color: '#fff' },
+  forgotText: { fontSize: Typography.xs, color: Colors.primary, fontWeight: '600' },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bgCard,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 56,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  input: { flex: 1, color: '#fff', fontSize: Typography.base, marginLeft: 10 },
+  loginBtn: {
+    backgroundColor: Colors.primary,
+    height: 56,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.md,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  btnDisabled: { opacity: 0.7 },
+  loginBtnText: { color: '#fff', fontSize: Typography.base, fontWeight: '800' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.md },
+  footerText: { color: Colors.textMuted, fontSize: Typography.sm },
+  signupText: { color: Colors.primary, fontSize: Typography.sm, fontWeight: '700' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', padding: 20 },
+  modalContent: { backgroundColor: Colors.bgCard, borderRadius: 20, padding: 24, gap: 16 },
+  modalTitle: { fontSize: Typography.xl, fontWeight: '800', color: '#fff' },
+  modalSubtitle: { fontSize: Typography.sm, color: Colors.textMuted, lineHeight: 20 },
+  modalInput: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, height: 50, paddingHorizontal: 16, color: '#fff' },
+  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  cancelBtn: { flex: 1, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  cancelBtnText: { color: Colors.textMuted, fontWeight: '600' },
+  submitBtn: { flex: 1, height: 48, backgroundColor: Colors.primary, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  submitBtnText: { color: '#fff', fontWeight: '700' },
 });
