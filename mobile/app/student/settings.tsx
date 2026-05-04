@@ -70,7 +70,9 @@ export default function StudentSettings() {
     setLoading(true);
     try {
       await api.delete('/users/profile-picture');
-      setUser({ ...user, profilePicture: undefined } as any);
+      if (user) {
+        setUser({ ...user, profilePicture: undefined });
+      }
       Alert.alert('Success', 'Profile picture removed successfully');
     } catch (err: any) {
       Alert.alert('Error', 'Failed to remove profile picture');
@@ -97,7 +99,7 @@ export default function StudentSettings() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      if (response.data.success) {
+      if (response.data.success && user) {
         setUser({ ...user, profilePicture: response.data.profilePicture });
         Alert.alert('Success', 'Profile picture updated successfully');
       }

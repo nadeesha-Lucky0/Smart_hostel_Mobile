@@ -225,7 +225,7 @@ export default function HostelRecords() {
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <Text style={styles.sectionTitle}>Target Floor</Text>
+              <Text style={styles.modalSectionTitle}>Target Floor</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selectorScroll}>
                 {floors.map(f => (
                   <TouchableOpacity 
@@ -243,7 +243,7 @@ export default function HostelRecords() {
                 ))}
               </ScrollView>
 
-              <Text style={styles.sectionTitle}>Target Room</Text>
+              <Text style={styles.modalSectionTitle}>Target Room</Text>
               <View style={styles.roomsGrid}>
                 {rooms.map(r => {
                   const isAvailable = r.beds.some((b: any) => !b.isOccupied || b.student === editingAllocation?.studentId);
@@ -267,7 +267,7 @@ export default function HostelRecords() {
 
               {selectedRoomId && (
                 <>
-                  <Text style={styles.sectionTitle}>Select Available Bed</Text>
+                  <Text style={styles.modalSectionTitle}>Select Available Bed</Text>
                   <View style={styles.bedsRow}>
                     {['A', 'B'].map(bid => {
                       const roomData = rooms.find(r => r._id === selectedRoomId);
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
   modalSub: { fontSize: 13, color: Colors.textMuted, fontWeight: '700', marginTop: 2 },
   closeBtn: { width: 44, height: 44, borderRadius: 16, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border },
   modalBody: { paddingBottom: 40 },
-  sectionTitle: { fontSize: 11, fontWeight: '900', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: 24, marginBottom: 16 },
+  modalSectionTitle: { fontSize: 11, fontWeight: '900', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: 24, marginBottom: 16 },
   selectorScroll: { flexDirection: 'row', marginBottom: 8 },
   selectorItem: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, backgroundColor: Colors.background, marginRight: 10, borderWidth: 1, borderColor: Colors.border },
   activeSelectorItem: { backgroundColor: Colors.roles.warden, borderColor: Colors.roles.warden },

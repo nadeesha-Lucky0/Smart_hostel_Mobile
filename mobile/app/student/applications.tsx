@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  ActivityIndicator, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
   Alert,
   TextInput,
   Switch,
@@ -14,15 +14,24 @@ import {
 } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
-import { 
-  ClipboardList, 
-  CheckCircle, 
-  Clock, 
-  XCircle, 
-  Plus, 
+import {
+  ClipboardList,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Plus,
   ArrowRight,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  User,
+  BookOpen,
+  Home,
+  ShieldAlert,
+  Edit,
+  Save,
+  CreditCard,
+  Layers,
+  Layout
 } from 'lucide-react-native';
 import api from '../../services/api';
 import * as DocumentPicker from 'expo-document-picker';
@@ -110,158 +119,174 @@ const initialClearanceForm: ClearanceFormState = {
   accountNumber: '',
 };
 
-const yearOptions = [
-  { label: '1st Year', value: '1' },
-  { label: '2nd Year', value: '2' },
-  { label: '3rd Year', value: '3' },
-  { label: '4th Year', value: '4' },
-];
-
-const genderOptions = [
-  { label: 'Male', value: 'male' },
-  { label: 'Female', value: 'female' },
-];
-
-const roomTypeOptions = [
-  { label: 'Single', value: 'single' },
-  { label: 'Double', value: 'double' },
-  { label: 'Triple', value: 'triple' },
-];
-
-const facultyOptions = [
-  { label: 'Computing', value: 'computing' },
-  { label: 'Business', value: 'business' },
-  { label: 'Engineering', value: 'engineering' },
-  { label: 'Humanities', value: 'humanities' },
-];
-
-const hostelOptions = [
-  { label: 'Male Hostel', value: 'Male Hostel' },
-  { label: 'Female Hostel', value: 'Female Hostel' },
-];
-
-const wingOptions = [
-  { label: 'Male', value: 'male' },
-  { label: 'Female', value: 'female' },
-];
-
 export default function StudentApplications() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('apply');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingMedical, setUploadingMedical] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // App Form State
-  const [appForm, setAppForm] = useState<ApplicationFormState>({ ...initialAppForm, studentName: user?.name || '', studentEmail: user?.email || '' });
+  const [appForm, setAppForm] = useState<ApplicationFormState>({
+    ...initialAppForm,
+    registrationNumber: user?.studentId || '',
+    studentName: user?.name || '',
+    studentEmail: user?.email || ''
+  });
   const [appErrors, setAppErrors] = useState<Partial<Record<keyof ApplicationFormState, string>>>({});
+  const [existingApp, setExistingApp] = useState<any>(null);
+  const [isLoadingApp, setIsLoadingApp] = useState(true);
 
   // Clearance Form State
   const [clearanceForm, setClearanceForm] = useState<ClearanceFormState>({ ...initialClearanceForm, studentName: user?.name || '', email: user?.email || '' });
+  const [myAllocation, setMyAllocation] = useState<any>(null);
+  const [existingClearance, setExistingClearance] = useState<any>(null);
 
   // -------------------------------------------------------------
-  // APPLICATION FORM LOGIC
+  // DATA FETCHING
+  // -------------------------------------------------------------
+  const fetchData = async () => {
+    try {
+      setIsLoadingApp(true);
+      
+      // Fetch Application
+      try {
+        const appRes = await api.get('/applications/me');
+        if (appRes.data && !appRes.data.error) {
+          setExistingApp(appRes.data);
+          const data = appRes.data;
+          setAppForm({
+            ...initialAppForm,
+            ...data,
+            dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0].replace(/-/g, '/') : ''
+          });
+          setIsEditing(false);
+        }
+      } catch (e) {
+        // Silently handle 404 as "no application yet"
+      }
+
+      // Fetch Allocation
+      try {
+        const allocRes = await api.get('/allocations/me');
+        if (allocRes.data?.success) {
+          setMyAllocation(allocRes.data.data);
+        }
+      } catch (e) {
+        // Silently handle 404
+      }
+
+      // Fetch Clearance
+      try {
+        const clearRes = await api.get('/clearance/me');
+        if (clearRes.data?.success) {
+          setExistingClearance(clearRes.data.data);
+          const c = clearRes.data.data;
+          setClearanceForm({
+            studentId: c.studentRollNumber || '',
+            studentName: c.studentName || '',
+            email: c.studentEmail || '',
+            roomNumber: c.roomNumber || '',
+            bankName: c.bankDetails?.bankName || '',
+            branchName: c.bankDetails?.branchName || '',
+            accountHolderName: c.bankDetails?.accountHolderName || '',
+            accountNumber: c.bankDetails?.accountNumber || '',
+          });
+        }
+      } catch (e) {
+        // Silently handle 404
+      }
+    } catch (err: any) {
+      console.error('Data fetch error:', err);
+    } finally {
+      setIsLoadingApp(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // -------------------------------------------------------------
+  // APPLICATION LOGIC
   // -------------------------------------------------------------
   const updateAppField = <K extends keyof ApplicationFormState>(field: K, value: ApplicationFormState[K]) => {
-    setAppForm(current => ({ ...current, [field]: value }));
+    if (existingApp && !isEditing) return;
+    setAppForm(current => {
+      let newValue = value;
+      if (field === 'dateOfBirth' && typeof newValue === 'string') {
+        let cleaned = newValue.replace(/\D/g, '');
+        if (cleaned.length >= 4) cleaned = cleaned.slice(0, 4) + '/' + cleaned.slice(4);
+        if (cleaned.length >= 7) cleaned = cleaned.slice(0, 7) + '/' + cleaned.slice(7);
+        newValue = cleaned.slice(0, 10) as any;
+      }
+      return { ...current, [field]: newValue };
+    });
     setAppErrors(current => ({ ...current, [field]: undefined }));
   };
 
   const submitApplication = async () => {
-    // Basic validation
-    const nextErrors: Partial<Record<keyof ApplicationFormState, string>> = {};
-    if (!appForm.studentRollNumber.trim()) nextErrors.studentRollNumber = 'Required';
-    if (!appForm.studentName.trim()) nextErrors.studentName = 'Required';
-    if (!appForm.nic.trim()) nextErrors.nic = 'Required';
-    // ... add more if needed, keeping it simple to fit
-
-    if (Object.keys(nextErrors).length > 0) {
-      setAppErrors(nextErrors);
-      Alert.alert('Validation Error', 'Please fill all required fields correctly.');
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       const payload = {
         ...appForm,
-        applicationStatus: 'Pending',
-        dateOfBirth: appForm.dateOfBirth ? new Date(appForm.dateOfBirth).toISOString() : new Date().toISOString(),
+        registrationNumber: appForm.registrationNumber.toUpperCase(),
+        dateOfBirth: appForm.dateOfBirth ? new Date(appForm.dateOfBirth.replace(/\//g, '-')).toISOString() : new Date().toISOString(),
       };
-      await api.post('/applications', payload);
-      Alert.alert('Success', 'Hostel application submitted successfully.');
-      setAppForm({ ...initialAppForm, studentName: user?.name || '', studentEmail: user?.email || '' });
-    } catch (error) {
-      Alert.alert('Submission Failed', 'Unable to submit the application. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+      if (existingApp) await api.put(`/applications/${existingApp._id}`, payload);
+      else await api.post('/applications', payload);
+      Alert.alert('Success', 'Application processed.');
+      fetchData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.error || 'Failed to submit.');
+    } finally { setIsSubmitting(false); }
   };
 
   const handleMedicalUpload = async () => {
+    if (existingApp && !isEditing) return;
     try {
       const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
-      if (result.canceled || !result.assets || result.assets.length === 0) return;
-
-      const file = result.assets[0];
+      if (result.canceled || !result.assets) return;
       setUploadingMedical(true);
-
       const formData = new FormData();
-      formData.append('medicalReport', {
-        uri: file.uri,
-        name: file.name,
-        type: file.mimeType || 'application/octet-stream',
-      } as any);
-
-      const response = await api.post('/applications/upload-medical', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      if (response.data?.url) {
-        updateAppField('medicalReportUrl', response.data.url);
-        Alert.alert('Success', 'Medical report uploaded successfully.');
-      }
-    } catch (error) {
-      Alert.alert('Upload Failed', 'Could not upload the medical report.');
-    } finally {
-      setUploadingMedical(false);
-    }
+      formData.append('medicalReport', { uri: result.assets[0].uri, name: result.assets[0].name, type: result.assets[0].mimeType || 'application/octet-stream' } as any);
+      const res = await api.post('/applications/upload-medical', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      if (res.data?.url) updateAppField('medicalReportUrl', res.data.url);
+    } catch (e) { Alert.alert('Error', 'Upload failed.'); } finally { setUploadingMedical(false); }
   };
 
   // -------------------------------------------------------------
-  // CLEARANCE FORM LOGIC
+  // CLEARANCE LOGIC
   // -------------------------------------------------------------
   const updateClearanceField = <K extends keyof ClearanceFormState>(field: K, value: ClearanceFormState[K]) => {
+    if (existingClearance) return; // Prevent edit if already submitted
     setClearanceForm(current => ({ ...current, [field]: value }));
   };
 
   const submitClearance = async () => {
-    if (!clearanceForm.studentId.trim() || !clearanceForm.roomNumber.trim()) {
-      Alert.alert('Validation Error', 'Please fill all required fields.');
+    if (!clearanceForm.accountNumber || !clearanceForm.bankName) {
+      Alert.alert('Validation Error', 'Please fill all bank details.');
       return;
     }
-
     try {
       setIsSubmitting(true);
       const payload = {
-        studentRollNumber: clearanceForm.studentId.trim(),
-        studentName: clearanceForm.studentName.trim(),
-        studentEmail: clearanceForm.email.trim(),
-        roomNumber: clearanceForm.roomNumber.trim(),
+        studentRollNumber: myAllocation?.studentRollNumber || existingApp?.studentRollNumber || '',
+        studentName: myAllocation?.studentName || existingApp?.studentName || user?.name || '',
+        studentEmail: user?.email || '',
+        roomNumber: myAllocation?.roomnumber || '',
         bankDetails: {
-          bankName: clearanceForm.bankName.trim(),
-          branchName: clearanceForm.branchName.trim(),
-          accountHolderName: clearanceForm.accountHolderName.trim(),
-          accountNumber: clearanceForm.accountNumber.trim(),
+          bankName: clearanceForm.bankName,
+          branchName: clearanceForm.branchName,
+          accountHolderName: clearanceForm.accountHolderName,
+          accountNumber: clearanceForm.accountNumber,
         },
       };
-      
-      // Assume endpoint for clearance, fallback if it doesn't exist
-      await api.post('/clearance', payload).catch(() => console.log('Clearance API not found, mocking success'));
-      
-      Alert.alert('Success', 'Hostel clearance form submitted successfully.');
-      setClearanceForm({ ...initialClearanceForm, studentName: user?.name || '', email: user?.email || '' });
-    } catch (error) {
-      Alert.alert('Submission Failed', 'Something went wrong. Please try again.');
+      await api.post('/clearance', payload);
+      Alert.alert('Success', 'Clearance form submitted successfully.');
+      fetchData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.error || 'Clearance submission failed.');
     } finally {
       setIsSubmitting(false);
     }
@@ -270,338 +295,198 @@ export default function StudentApplications() {
   // -------------------------------------------------------------
   // RENDER HELPERS
   // -------------------------------------------------------------
-  const renderAppInput = (label: string, field: keyof ApplicationFormState, props?: any) => (
-    <View style={styles.inputGroup}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={[styles.input, props?.multiline && styles.inputMultiline, appErrors[field] && styles.inputError]}
-        value={appForm[field] as string}
-        onChangeText={(val) => updateAppField(field, val)}
-        placeholderTextColor={Colors.textMuted}
-        {...props}
-      />
-      {appErrors[field] && <Text style={styles.errorText}>{appErrors[field]}</Text>}
-    </View>
-  );
-
-  const renderAppOptions = (label: string, field: keyof ApplicationFormState, options: any[]) => (
-    <View style={styles.inputGroup}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.optionsRow}>
-        {options.map(opt => {
-          const isSelected = appForm[field] === opt.value;
-          return (
-            <TouchableOpacity 
-              key={opt.value} 
-              style={[styles.optionBtn, isSelected && styles.optionBtnActive]}
-              onPress={() => updateAppField(field, opt.value)}
-            >
-              <Text style={[styles.optionText, isSelected && styles.optionTextActive]}>{opt.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
+  const renderInput = (label: string, value: string, onChange: (val: string) => void, props?: any) => {
+    const isViewOnly = props?.editable === false || (activeTab === 'apply' && existingApp && !isEditing);
+    return (
+      <View style={[styles.inputGroup, props?.fullWidth ? { width: '100%' } : { width: '48%' }]}>
+        <Text style={styles.label}>{label}</Text>
+        <TextInput
+          style={[styles.input, isViewOnly && styles.viewOnlyInput, props?.style]}
+          value={value}
+          onChangeText={onChange}
+          placeholderTextColor="#94a3b8"
+          editable={!isViewOnly}
+          {...props}
+        />
       </View>
-      {appErrors[field] && <Text style={styles.errorText}>{appErrors[field]}</Text>}
-    </View>
-  );
-
-  const renderClearanceInput = (label: string, field: keyof ClearanceFormState, props?: any) => (
-    <View style={styles.inputGroup}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={[styles.input, props?.multiline && styles.inputMultiline]}
-        value={clearanceForm[field] as string}
-        onChangeText={(val) => updateClearanceField(field, val)}
-        placeholderTextColor={Colors.textMuted}
-        {...props}
-      />
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
-      {/* Pill Tabs */}
       <View style={styles.tabContainer}>
         <View style={styles.tabWrapper}>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'apply' && styles.tabActive]}
-            onPress={() => setActiveTab('apply')}
-          >
-            <Plus size={16} color={activeTab === 'apply' ? '#FFF' : Colors.textMuted} />
-            <Text style={[styles.tabText, activeTab === 'apply' && styles.tabTextActive]}>Apply</Text>
+          <TouchableOpacity style={[styles.tab, activeTab === 'apply' && styles.tabActive]} onPress={() => setActiveTab('apply')}>
+            <Plus size={16} color={activeTab === 'apply' ? '#FFF' : '#64748b'} />
+            <Text style={[styles.tabText, activeTab === 'apply' && styles.tabTextActive]}>Registration</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'clearance' && styles.tabActive]}
-            onPress={() => setActiveTab('clearance')}
-          >
-            <LogOut size={16} color={activeTab === 'clearance' ? '#FFF' : Colors.textMuted} />
+          <TouchableOpacity style={[styles.tab, activeTab === 'clearance' && styles.tabActive]} onPress={() => setActiveTab('clearance')}>
+            <LogOut size={16} color={activeTab === 'clearance' ? '#FFF' : '#64748b'} />
             <Text style={[styles.tabText, activeTab === 'clearance' && styles.tabTextActive]}>Clearance</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          
-          {/* APPLY TAB */}
-          {activeTab === 'apply' && (
-            <View style={styles.formContainer}>
-              <View style={styles.header}>
-                <Text style={styles.title}>Hostel Application</Text>
-                <Text style={styles.subtitle}>Complete your student accommodation request.</Text>
-              </View>
+      {isLoadingApp ? (
+        <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator size="large" color={Colors.roles.student} /></View>
+      ) : (
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
 
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Student Details</Text>
-                {renderAppInput('Student Roll Number', 'studentRollNumber', { placeholder: 'M100', autoCapitalize: 'characters' })}
-                {renderAppInput('Full Name', 'studentName', { placeholder: 'John Doe', autoCapitalize: 'words' })}
-                {renderAppInput('Email', 'studentEmail', { placeholder: 'it12345678@my.sliit.lk', keyboardType: 'email-address', autoCapitalize: 'none' })}
-                {renderAppInput('NIC', 'nic', { autoCapitalize: 'characters' })}
-                {renderAppOptions('Gender', 'gender', genderOptions)}
-                {renderAppInput('Date of Birth', 'dateOfBirth', { placeholder: 'YYYY-MM-DD' })}
-                {renderAppInput('Contact Number', 'contactNumber', { keyboardType: 'phone-pad' })}
-                {renderAppInput('Permanent Address', 'permanentAddress', { multiline: true })}
-                {renderAppOptions('Faculty', 'faculty', facultyOptions)}
-                {renderAppInput('Degree Program', 'studentDegree', { placeholder: 'SE', autoCapitalize: 'characters' })}
-                {renderAppOptions('Year', 'studentYear', yearOptions)}
-                {renderAppInput('Registration Number', 'registrationNumber', { placeholder: 'IT12345678', autoCapitalize: 'characters' })}
-              </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Hostel Preferences</Text>
-                {renderAppOptions('Preferred Hostel', 'preferredHostel', hostelOptions)}
-                {renderAppOptions('Student Wing', 'studentWing', wingOptions)}
-                {renderAppOptions('Room Type', 'roomType', roomTypeOptions)}
-                {renderAppInput('Duration of Stay', 'durationOfStay', { placeholder: 'e.g. 5 months' })}
-              </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Emergency Contacts</Text>
-                {renderAppInput('Emergency Contact Name', 'emergencyContactName', { autoCapitalize: 'words' })}
-                {renderAppInput('Emergency Contact Phone', 'emergencyContactPhone', { keyboardType: 'phone-pad' })}
-                {renderAppInput('Guardian Name', 'guardianName', { autoCapitalize: 'words' })}
-                {renderAppInput('Guardian Contact Number', 'guardianContactNumber', { keyboardType: 'phone-pad' })}
-              </View>
-
-              <View style={styles.section}>
-                <View style={styles.switchRow}>
-                  <View style={styles.switchCopy}>
-                    <Text style={styles.label}>Medical Condition?</Text>
-                    <Text style={styles.helperText}>Required by hostel staff</Text>
-                  </View>
-                  <Switch
-                    value={appForm.hasMedicalCondition}
-                    onValueChange={(val) => updateAppField('hasMedicalCondition', val)}
-                    trackColor={{ false: Colors.border, true: Colors.roles.student + '80' }}
-                    thumbColor={appForm.hasMedicalCondition ? Colors.roles.student : '#f4f3f4'}
-                  />
+            {activeTab === 'apply' ? (
+              <View style={styles.formContainer}>
+                <View style={styles.header}>
+                  <Text style={styles.title}>Hostel Application</Text>
+                  <Text style={styles.subtitle}>{existingApp ? 'Your submitted application' : 'Complete your accommodation request'}</Text>
                 </View>
-                {appForm.hasMedicalCondition && (
-                  <View style={styles.medicalFields}>
-                    {renderAppInput('Medical Condition Details', 'medicalConditionDetails', { multiline: true })}
-                    {renderAppInput('Allergies', 'allergies', { multiline: true })}
-                    {renderAppInput('Regular Medications', 'regularMedications', { multiline: true })}
-                    {renderAppInput('Additional Medical Info', 'medicalInfo', { multiline: true })}
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Medical Report</Text>
-                      <TouchableOpacity 
-                        style={[styles.uploadBtn, uploadingMedical && styles.uploadBtnDisabled]} 
-                        onPress={handleMedicalUpload}
-                        disabled={uploadingMedical}
-                      >
-                        <ClipboardList size={20} color={appForm.medicalReportUrl ? Colors.roles.student : Colors.textMuted} />
-                        <Text style={styles.uploadBtnText}>
-                          {uploadingMedical ? 'Uploading...' : appForm.medicalReportUrl ? 'Change Document' : 'Attach Document'}
-                        </Text>
-                      </TouchableOpacity>
-                      {appForm.medicalReportUrl ? (
-                        <Text style={styles.helperText}>Document uploaded successfully.</Text>
-                      ) : null}
+
+                {existingApp && (
+                  <View style={styles.statusBanner}>
+                    <View style={styles.statusLeft}>
+                      <View style={[styles.statusDot, { backgroundColor: getStatusColor(existingApp.applicationStatus) }]} />
+                      <Text style={[styles.statusText, { color: getStatusColor(existingApp.applicationStatus) }]}>{existingApp.applicationStatus.toUpperCase()}</Text>
+                      <Text style={styles.statusId}> • ID: {existingApp.studentRollNumber || 'PENDING'}</Text>
                     </View>
                   </View>
                 )}
+
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}><User size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>PERSONAL DETAILS</Text></View>
+                  <View style={styles.grid}>
+                    {renderInput('FULL NAME', appForm.studentName, (v) => updateAppField('studentName', v), { fullWidth: true })}
+                    {renderInput('NIC', appForm.nic, (v) => updateAppField('nic', v))}
+                    {renderInput('GENDER', appForm.gender, () => {}, { editable: false })}
+                    {renderInput('DOB', appForm.dateOfBirth, (v) => updateAppField('dateOfBirth', v))}
+                    {renderInput('CONTACT', appForm.contactNumber, (v) => updateAppField('contactNumber', v))}
+                  </View>
+                </View>
+
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}><BookOpen size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>ACADEMIC INFORMATION</Text></View>
+                  <View style={styles.grid}>
+                    {renderInput('DEGREE', appForm.studentDegree, (v) => updateAppField('studentDegree', v))}
+                    {renderInput('YEAR', appForm.studentYear, (v) => updateAppField('studentYear', v))}
+                    {renderInput('REG NO', appForm.registrationNumber, (v) => updateAppField('registrationNumber', v))}
+                    {renderInput('FACULTY', appForm.faculty, (v) => updateAppField('faculty', v))}
+                  </View>
+                </View>
+
+                {existingApp && !isEditing ? (
+                  <TouchableOpacity style={styles.editBtn} onPress={() => setIsEditing(true)}><Edit size={18} color="#FFF" /><Text style={styles.editBtnText}>Edit Application</Text></TouchableOpacity>
+                ) : (
+                  <TouchableOpacity style={styles.submitBtn} onPress={submitApplication}><Save size={18} color="#FFF" /><Text style={styles.submitBtnText}>{existingApp ? 'Update' : 'Submit'}</Text></TouchableOpacity>
+                )}
               </View>
+            ) : (
+              /* CLEARANCE TAB */
+              <View style={styles.formContainer}>
+                <View style={styles.header}>
+                  <Text style={styles.title}>Clearance Form</Text>
+                  <Text style={styles.subtitle}>Please review your allocation details below and submit for clearance.</Text>
+                </View>
 
-              <TouchableOpacity 
-                style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]} 
-                onPress={submitApplication}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Submit Application</Text>}
-              </TouchableOpacity>
-            </View>
-          )}
+                {/* STUDENT DETAILS (Read Only) */}
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}><User size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>STUDENT DETAILS</Text></View>
+                  <View style={styles.grid}>
+                    {renderInput('FULL NAME', myAllocation?.studentName || existingApp?.studentName || user?.name || '', () => {}, { fullWidth: true, editable: false })}
+                    {renderInput('EMAIL', user?.email || '', () => {}, { fullWidth: true, editable: false })}
+                    {renderInput('PHONE', existingApp?.contactNumber || '', () => {}, { editable: false })}
+                    {renderInput('ROLL NUMBER', myAllocation?.studentRollNumber || existingApp?.studentRollNumber || 'N/A', () => {}, { editable: false })}
+                  </View>
+                </View>
 
-          {/* CLEARANCE TAB */}
-          {activeTab === 'clearance' && (
-            <View style={styles.formContainer}>
-              <View style={styles.header}>
-                <Text style={styles.title}>Clearance Form</Text>
-                <Text style={styles.subtitle}>Submit before leaving the hostel for fee and key review.</Text>
+                {/* ALLOCATION INFO (Read Only) */}
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}><Layers size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>ALLOCATION INFO</Text></View>
+                  <View style={styles.grid}>
+                    {renderInput('WING', myAllocation?.studentWing || existingApp?.studentWing || 'N/A', () => {}, { editable: false })}
+                    {renderInput('FLOOR', String(myAllocation?.floorNumber || 'N/A'), () => {}, { editable: false })}
+                    {renderInput('ROOM NUMBER', myAllocation?.roomnumber ? `${myAllocation.studentWing === 'female' ? 'F' : 'M'}${myAllocation.roomnumber}` : (existingApp?.assignedRoom || 'N/A'), () => {}, { editable: false })}
+                    {renderInput('ROOM TYPE', myAllocation?.roomType || existingApp?.roomType || 'N/A', () => {}, { editable: false })}
+                    {renderInput('BED ID', myAllocation?.bedId || 'N/A', () => {}, { editable: false })}
+                  </View>
+                </View>
+
+                {/* REFUND BANK DETAILS */}
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}><CreditCard size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>REFUND BANK DETAILS</Text></View>
+                  <Text style={styles.helperText}>Where should we send your security deposit refund?</Text>
+                  <View style={styles.grid}>
+                    {renderInput('ACCOUNT HOLDER NAME', clearanceForm.accountHolderName, (v) => updateClearanceField('accountHolderName', v), { fullWidth: true, placeholder: 'Enter full name as in bank', editable: !existingClearance })}
+                    {renderInput('BANK NAME', clearanceForm.bankName, (v) => updateClearanceField('bankName', v), { fullWidth: true, placeholder: 'e.g. Bank of Ceylon, HNB', editable: !existingClearance })}
+                    {renderInput('BRANCH', clearanceForm.branchName, (v) => updateClearanceField('branchName', v), { fullWidth: true, placeholder: 'Branch location', editable: !existingClearance })}
+                    {renderInput('ACCOUNT NUMBER', clearanceForm.accountNumber, (v) => updateClearanceField('accountNumber', v), { fullWidth: true, placeholder: 'Enter account number', keyboardType: 'number-pad', editable: !existingClearance })}
+                  </View>
+                </View>
+
+                {!existingClearance && (
+                  <View style={{ marginTop: 10 }}>
+                    <Text style={styles.hintText}>Verify all details before submitting.</Text>
+                    <TouchableOpacity style={styles.submitBtn} onPress={submitClearance}>
+                      <Save size={18} color="#FFF" />
+                      <Text style={styles.submitBtnText}>Submit Clearance</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {existingClearance && (
+                  <View style={styles.statusBanner}>
+                    <CheckCircle size={20} color="#10b981" />
+                    <Text style={{ marginLeft: 10, color: '#10b981', fontWeight: '800' }}>CLEARANCE SUBMITTED</Text>
+                  </View>
+                )}
               </View>
+            )}
 
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Allocation Info</Text>
-                {renderClearanceInput('Student ID', 'studentId', { placeholder: 'Enter Student ID', autoCapitalize: 'characters' })}
-                {renderClearanceInput('Student Name', 'studentName', { placeholder: 'Full Name' })}
-                {renderClearanceInput('Email', 'email', { placeholder: 'Email Address', keyboardType: 'email-address', autoCapitalize: 'none' })}
-                {renderClearanceInput('Room Number', 'roomNumber', { placeholder: 'Room Number' })}
-              </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Refundable Payment Details</Text>
-                {renderClearanceInput('Bank Name', 'bankName', { placeholder: 'Bank Name' })}
-                {renderClearanceInput('Branch Name', 'branchName', { placeholder: 'Branch Name' })}
-                {renderClearanceInput('Account Holder Name', 'accountHolderName', { placeholder: 'Account Holder Name' })}
-                {renderClearanceInput('Account Number', 'accountNumber', { placeholder: 'Account Number', keyboardType: 'number-pad' })}
-              </View>
-
-              <TouchableOpacity 
-                style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]} 
-                onPress={submitClearance}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>Submit Clearance</Text>}
-              </TouchableOpacity>
-            </View>
-          )}
-
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      )}
     </View>
   );
 }
 
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Activated':
+    case 'Room Allocated': return '#10b981';
+    case 'Pending': return '#f59e0b';
+    case 'Rejected': return '#ef4444';
+    default: return '#6b7280';
+  }
+};
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 40 },
-  
-  // Tab Pill Styles
   tabContainer: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 10 },
-  tabWrapper: { 
-    flexDirection: 'row', 
-    backgroundColor: Colors.surface, 
-    borderRadius: 16, 
-    padding: 6,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
-  tab: { 
-    flex: 1, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    paddingVertical: 10, 
-    borderRadius: 12,
-    gap: 6
-  },
+  tabWrapper: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 16, padding: 6, elevation: 2 },
+  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 12, gap: 6 },
   tabActive: { backgroundColor: Colors.roles.student },
-  tabText: { fontSize: 13, fontWeight: '700', color: Colors.textMuted },
+  tabText: { fontSize: 13, fontWeight: '700', color: '#64748b' },
   tabTextActive: { color: '#FFF' },
-
-  header: { padding: 24, paddingBottom: 12, paddingTop: 10 },
-  title: { fontSize: 24, fontWeight: '800', color: Colors.text },
-  subtitle: { fontSize: 13, color: Colors.textMuted, marginTop: 4, fontWeight: '600' },
-  
-  // List Styles
-  list: { paddingHorizontal: 24 },
-  card: { backgroundColor: Colors.surface, borderRadius: 24, padding: 20, marginBottom: 16, elevation: 1 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center' },
-  statusIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  headerText: { flex: 1, marginLeft: 16 },
-  appTitle: { fontSize: 15, fontWeight: '800', color: Colors.text },
-  appDate: { fontSize: 12, color: Colors.textMuted, marginTop: 2, fontWeight: '600' },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  badgeText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
-  cardDivider: { height: 1, backgroundColor: Colors.background, marginVertical: 16 },
-  detailsRow: { flexDirection: 'row', gap: 24 },
-  detailItem: { flex: 1 },
-  detailLabel: { fontSize: 9, fontWeight: '900', color: Colors.textMuted, letterSpacing: 0.5, marginBottom: 4 },
-  detailValue: { fontSize: 13, fontWeight: '700', color: Colors.text },
-  actionBtn: { backgroundColor: Colors.roles.student, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, borderRadius: 14, marginTop: 16, gap: 10 },
-  actionBtnText: { color: '#FFF', fontSize: 13, fontWeight: '800' },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, marginTop: 60 },
-  emptyIconBox: { width: 100, height: 100, borderRadius: 36, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 24, elevation: 2 },
-  emptyTitle: { fontSize: 18, fontWeight: '800', color: Colors.text },
-  emptySub: { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginTop: 8, lineHeight: 20, fontWeight: '500' },
-  applyNowBtn: { backgroundColor: Colors.roles.student, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, marginTop: 32, gap: 10, elevation: 4 },
-  applyNowText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
-
-  // Form Styles
+  header: { padding: 24, paddingBottom: 12 },
+  title: { fontSize: 26, fontWeight: '900', color: '#1e293b' },
+  subtitle: { fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: '600' },
+  statusBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 24, padding: 16, borderRadius: 16, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: '#10b981', elevation: 2 },
+  statusLeft: { flexDirection: 'row', alignItems: 'center' },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+  statusText: { fontWeight: '800', fontSize: 13 },
+  statusId: { fontSize: 13, color: '#64748b', fontWeight: '600' },
   formContainer: { paddingHorizontal: 24 },
-  section: { 
-    backgroundColor: Colors.surface, 
-    borderRadius: 20, 
-    padding: 20, 
-    marginBottom: 20,
-    elevation: 1,
-    borderWidth: 1,
-    borderColor: Colors.border + '50'
-  },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: Colors.text, marginBottom: 16 },
+  section: { backgroundColor: '#fff', borderRadius: 24, padding: 20, marginBottom: 20, elevation: 1 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
+  sectionTitle: { fontSize: 12, fontWeight: '900', color: '#475569', letterSpacing: 1 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   inputGroup: { marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: '700', color: Colors.text, marginBottom: 8 },
-  input: { 
-    backgroundColor: Colors.background, 
-    borderRadius: 12, 
-    paddingHorizontal: 16, 
-    minHeight: 52, 
-    fontSize: 15, 
-    color: Colors.text,
-    borderWidth: 1,
-    borderColor: Colors.border
-  },
-  inputMultiline: { minHeight: 100, paddingTop: 16, textAlignVertical: 'top' },
-  inputError: { borderColor: Colors.danger },
-  errorText: { fontSize: 11, color: Colors.danger, marginTop: 4, fontWeight: '600' },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  optionBtn: { 
-    paddingHorizontal: 16, 
-    paddingVertical: 10, 
-    borderRadius: 10, 
-    borderWidth: 1, 
-    borderColor: Colors.border,
-    backgroundColor: Colors.background
-  },
-  optionBtnActive: { backgroundColor: Colors.roles.student, borderColor: Colors.roles.student },
-  optionText: { fontSize: 13, fontWeight: '600', color: Colors.text },
-  optionTextActive: { color: '#FFF' },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingVertical: 4 },
-  switchCopy: { flex: 1 },
-  helperText: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  medicalFields: { marginTop: 12, borderTopWidth: 1, borderTopColor: Colors.border, paddingTop: 16 },
-  
-  submitBtn: { 
-    backgroundColor: Colors.roles.student, 
-    borderRadius: 16, 
-    minHeight: 56, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    marginTop: 10,
-    elevation: 3,
-    shadowColor: Colors.roles.student,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  submitBtnDisabled: { opacity: 0.7 },
-  submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-  uploadBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: Colors.surface,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    borderStyle: 'dashed',
-    borderRadius: 16,
-    minHeight: 56,
-  },
-  uploadBtnDisabled: { opacity: 0.5 },
-  uploadBtnText: { fontSize: 14, fontWeight: '700', color: Colors.textMuted }
+  label: { fontSize: 9, fontWeight: '800', color: '#94a3b8', marginBottom: 8, letterSpacing: 0.5 },
+  input: { backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 16, minHeight: 48, fontSize: 14, fontWeight: '600', color: '#1e293b' },
+  viewOnlyInput: { backgroundColor: '#f8fafc', color: '#64748b' },
+  helperText: { fontSize: 12, color: '#64748b', marginBottom: 16, fontWeight: '600' },
+  hintText: { fontSize: 12, color: '#94a3b8', textAlign: 'center', marginBottom: 12 },
+  editBtn: { backgroundColor: '#4f46e5', borderRadius: 16, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, elevation: 4 },
+  editBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+  submitBtn: { backgroundColor: Colors.roles.student, borderRadius: 16, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, elevation: 4 },
+  submitBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' }
 });

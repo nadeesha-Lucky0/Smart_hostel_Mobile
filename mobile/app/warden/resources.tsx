@@ -442,7 +442,7 @@ const StudentFloorsTab = () => {
                 ]}
               >
                 <Text style={styles.roomNumber}>{item.Roomid || 'N/A'}</Text>
-                <Text style={[styles.roomStatus, { color: isFull ? Colors.danger : isEmpty ? Colors.success : '#D97706' }]}>
+                <Text style={[styles.roomStatus, { color: isFull ? Colors.danger : isEmpty ? Colors.secondary : '#D97706' }]}>
                   {isFull ? 'FULL' : isEmpty ? 'VACANT' : `${occ}/${total} OCC`}
                 </Text>
                 <Text style={styles.roomType}>{item.type || 'Standard'}</Text>
@@ -549,7 +549,7 @@ const RoomDetailModal = ({ room: initialRoom, floorActive, onClose }: any) => {
                           style={styles.goodInput}
                           placeholder="Code"
                           defaultValue={good.uniqueCode}
-                          onBlur={(e) => handleUpdateGood(bed.bedId, good._id, 'uniqueCode', e.nativeEvent.text)}
+                          onEndEditing={(e) => handleUpdateGood(bed.bedId, good._id, 'uniqueCode', e.nativeEvent.text)}
                           editable={floorActive && saving !== good._id}
                         />
                         <StatusBadge

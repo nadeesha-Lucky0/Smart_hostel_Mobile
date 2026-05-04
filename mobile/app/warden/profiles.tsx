@@ -265,7 +265,7 @@ export default function WardenProfiles() {
               <View style={styles.modalBodyWrapper}>
                 {/* Academic Info */}
                 <View style={styles.infoSection}>
-                  <Text style={styles.sectionTitle}>Academic Information</Text>
+                  <Text style={styles.modalSectionTitle}>Academic Information</Text>
                   <View style={styles.infoGrid}>
                     <View style={styles.infoItem}>
                       <Text style={styles.infoLabel}>Faculty</Text>
@@ -288,7 +288,7 @@ export default function WardenProfiles() {
 
                 {/* Personal Info */}
                 <View style={styles.infoSection}>
-                  <Text style={styles.sectionTitle}>Personal Details</Text>
+                  <Text style={styles.modalSectionTitle}>Personal Details</Text>
                   <View style={styles.infoGrid}>
                     <View style={styles.infoItem}>
                       <Text style={styles.infoLabel}>Contact Number</Text>
@@ -311,7 +311,7 @@ export default function WardenProfiles() {
 
                 {/* Emergency Contact */}
                 <View style={styles.infoSection}>
-                  <Text style={styles.sectionTitle}>Emergency Contact</Text>
+                  <Text style={styles.modalSectionTitle}>Emergency Contact</Text>
                   <View style={styles.infoItemFull}>
                     <Text style={styles.infoLabel}>Guardian Name</Text>
                     <Text style={styles.infoValue}>{selectedStudent?.guardianName || selectedStudent?.emergencyContactName || 'N/A'}</Text>
@@ -324,7 +324,7 @@ export default function WardenProfiles() {
 
                 {/* Medical Information */}
                 <View style={styles.infoSection}>
-                  <Text style={styles.sectionTitle}>Medical Information</Text>
+                  <Text style={styles.modalSectionTitle}>Medical Information</Text>
                   <View style={styles.medicalStatusRow}>
                     <Text style={styles.infoLabel}>Has Medical Condition?</Text>
                     <View style={[styles.boolBadge, { backgroundColor: selectedStudent?.hasMedicalCondition ? '#EF444420' : '#10B98120' }]}>
@@ -352,7 +352,7 @@ export default function WardenProfiles() {
                 {/* Payment Slip Preview */}
                 {selectedStudent?.paymentSlipUrl && (
                   <View style={styles.infoSection}>
-                    <Text style={styles.sectionTitle}>Initial Payment Slip</Text>
+                    <Text style={styles.modalSectionTitle}>Initial Payment Slip</Text>
                     <TouchableOpacity
                       onPress={() => selectedStudent?.paymentSlipUrl && Linking.openURL(selectedStudent.paymentSlipUrl)}
                       style={styles.slipPreview}
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   statusMiniBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   statusMiniText: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
   infoSection: { backgroundColor: Colors.surface, borderRadius: 24, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: Colors.border },
-  sectionTitle: { fontSize: 11, fontWeight: '900', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
+  modalSectionTitle: { fontSize: 11, fontWeight: '900', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
   infoGrid: { flexDirection: 'row', gap: 16, marginBottom: 12 },
   infoItem: { flex: 1 },
   infoLabel: { fontSize: 10, fontWeight: '800', color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 4 },

@@ -445,6 +445,7 @@ export default function FinancialDashboard() {
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.background },
   headerContainer: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
   tabBar: { flexDirection: 'row', backgroundColor: Colors.surface, padding: 12, gap: 8, borderBottomWidth: 1, borderBottomColor: Colors.border },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 14 },

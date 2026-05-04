@@ -29,6 +29,7 @@ export default function LeftStudents() {
   const [search, setSearch] = useState('');
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
