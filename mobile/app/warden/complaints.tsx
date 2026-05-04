@@ -64,9 +64,10 @@ interface Complaint {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getStatusColor = (status: string) => {
-  switch (status?.toLowerCase()) {
+  const s = status?.toLowerCase().replace(/\s/g, '').replace(/-/g, '');
+  switch (s) {
     case 'resolved':    return '#10B981';
-    case 'in-progress': return '#F59E0B';
+    case 'inprogress':  return '#F59E0B';
     case 'open':        return '#EF4444';
     case 'pending':     return '#F59E0B';
     default:            return Colors.textMuted;
@@ -74,8 +75,9 @@ const getStatusColor = (status: string) => {
 };
 
 const getStatusLabel = (status: string) => {
-  switch (status?.toLowerCase()) {
-    case 'in-progress': return 'In Progress';
+  const s = status?.toLowerCase().replace(/\s/g, '').replace(/-/g, '');
+  switch (s) {
+    case 'inprogress':  return 'In Progress';
     case 'resolved':    return 'Resolved';
     case 'open':        return 'Open';
     case 'pending':     return 'Pending';
@@ -84,9 +86,10 @@ const getStatusLabel = (status: string) => {
 };
 
 const getStatusIcon = (status: string, size = 16) => {
-  switch (status?.toLowerCase()) {
+  const s = status?.toLowerCase().replace(/\s/g, '').replace(/-/g, '');
+  switch (s) {
     case 'resolved':    return <CheckCircle size={size} color="#10B981" />;
-    case 'in-progress': return <Clock size={size} color="#F59E0B" />;
+    case 'inprogress':  return <Clock size={size} color="#F59E0B" />;
     case 'open':        return <AlertCircle size={size} color="#EF4444" />;
     default:            return <MessageSquare size={size} color={Colors.textMuted} />;
   }
@@ -322,8 +325,8 @@ export default function WardenComplaints() {
       <SafeAreaView style={s.safeArea}>
         <KeyboardAvoidingView
           style={s.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
         >
           {/* Header */}
           <View style={s.chatHeader}>
@@ -361,16 +364,20 @@ export default function WardenComplaints() {
 
               {showStatusMenu && (
                 <View style={s.statusMenu}>
-                  {(['open', 'in-progress', 'resolved'] as const).map(st => (
-                    <TouchableOpacity
-                      key={st}
-                      style={[s.statusMenuItem, activeComplaint.status === st && s.statusMenuItemOn]}
-                      onPress={() => updateStatus(st)}
-                    >
-                      <View style={[s.dot, { backgroundColor: getStatusColor(st) }]} />
-                      <Text style={s.statusMenuTxt}>{getStatusLabel(st)}</Text>
-                    </TouchableOpacity>
-                  ))}
+                  {(['open', 'in-progress', 'resolved'] as const).map(st => {
+                    // Match logic that handles both hyphenated and non-hyphenated versions
+                    const isSelected = activeComplaint.status.toLowerCase().replace(/-/g, '') === st.replace(/-/g, '');
+                    return (
+                      <TouchableOpacity
+                        key={st}
+                        style={[s.statusMenuItem, isSelected && s.statusMenuItemOn]}
+                        onPress={() => updateStatus(st)}
+                      >
+                        <View style={[s.dot, { backgroundColor: getStatusColor(st) }]} />
+                        <Text style={s.statusMenuTxt}>{getStatusLabel(st)}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               )}
             </View>
@@ -397,6 +404,7 @@ export default function WardenComplaints() {
                 contentContainerStyle={s.msgContent}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
               >
                 {msgCount === 0 && (
                   <View style={s.emptyChat}>
@@ -704,7 +712,7 @@ const s = StyleSheet.create({
   emptySub:  { fontSize: 13, color: Colors.textMuted },
 
   // ── Chat header ──
-  chatHeader:   { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.surface, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: BORDER_COLOR, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4 },
+  chatHeader:   { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.surface, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: BORDER_COLOR, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 4, zIndex: 100 },
   iconBtn:      { width: 36, height: 36, borderRadius: 11, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
   avatar:       { width: 36, height: 36, borderRadius: 11, backgroundColor: WARDEN_COLOR, alignItems: 'center', justifyContent: 'center' },
   avatarTxt:    { fontSize: 14, fontWeight: '900', color: '#fff' },
@@ -716,7 +724,7 @@ const s = StyleSheet.create({
   // Status pill
   statusPill:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
   statusPillTxt:    { fontSize: 10, fontWeight: '800' },
-  statusMenu:       { position: 'absolute', right: 0, top: 34, backgroundColor: Colors.surface, borderRadius: 14, borderWidth: 1, borderColor: BORDER_COLOR, zIndex: 999, minWidth: 148, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.14, shadowRadius: 12 },
+  statusMenu:       { position: 'absolute', right: 0, top: 42, backgroundColor: Colors.surface, borderRadius: 14, borderWidth: 1, borderColor: BORDER_COLOR, zIndex: 1000, minWidth: 148, elevation: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 15 },
   statusMenuItem:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11 },
   statusMenuItemOn: { backgroundColor: Colors.background },
   statusMenuTxt:    { fontSize: 13, fontWeight: '700', color: Colors.text },
