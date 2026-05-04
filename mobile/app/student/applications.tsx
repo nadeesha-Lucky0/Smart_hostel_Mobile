@@ -31,7 +31,8 @@ import {
   Save,
   CreditCard,
   Layers,
-  Layout
+  Layout,
+  Stethoscope
 } from 'lucide-react-native';
 import api from '../../services/api';
 import * as DocumentPicker from 'expo-document-picker';
@@ -119,6 +120,41 @@ const initialClearanceForm: ClearanceFormState = {
   accountNumber: '',
 };
 
+const yearOptions = [
+  { label: '1st Year', value: '1' },
+  { label: '2nd Year', value: '2' },
+  { label: '3rd Year', value: '3' },
+  { label: '4th Year', value: '4' },
+];
+
+const genderOptions = [
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
+];
+
+const roomTypeOptions = [
+  { label: 'Single', value: 'single' },
+  { label: 'Double', value: 'double' },
+  { label: 'Triple', value: 'triple' },
+];
+
+const facultyOptions = [
+  { label: 'Computing', value: 'computing' },
+  { label: 'Business', value: 'business' },
+  { label: 'Engineering', value: 'engineering' },
+  { label: 'Humanities', value: 'humanities' },
+];
+
+const hostelOptions = [
+  { label: 'Male Hostel', value: 'Male Hostel' },
+  { label: 'Female Hostel', value: 'Female Hostel' },
+];
+
+const wingOptions = [
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
+];
+
 export default function StudentApplications() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('apply');
@@ -162,19 +198,13 @@ export default function StudentApplications() {
           });
           setIsEditing(false);
         }
-      } catch (e) {
-        // Silently handle 404 as "no application yet"
-      }
+      } catch (e) {}
 
       // Fetch Allocation
       try {
         const allocRes = await api.get('/allocations/me');
-        if (allocRes.data?.success) {
-          setMyAllocation(allocRes.data.data);
-        }
-      } catch (e) {
-        // Silently handle 404
-      }
+        if (allocRes.data?.success) setMyAllocation(allocRes.data.data);
+      } catch (e) {}
 
       // Fetch Clearance
       try {
@@ -193,9 +223,7 @@ export default function StudentApplications() {
             accountNumber: c.bankDetails?.accountNumber || '',
           });
         }
-      } catch (e) {
-        // Silently handle 404
-      }
+      } catch (e) {}
     } catch (err: any) {
       console.error('Data fetch error:', err);
     } finally {
@@ -215,12 +243,21 @@ export default function StudentApplications() {
     setAppForm(current => {
       let newValue = value;
       if (field === 'dateOfBirth' && typeof newValue === 'string') {
-        let cleaned = newValue.replace(/\D/g, '');
-        if (cleaned.length >= 4) cleaned = cleaned.slice(0, 4) + '/' + cleaned.slice(4);
-        if (cleaned.length >= 7) cleaned = cleaned.slice(0, 7) + '/' + cleaned.slice(7);
-        newValue = cleaned.slice(0, 10) as any;
+        const prevValue = (current as any)[field] || '';
+        const isDeleting = newValue.length < prevValue.length;
+        if (!isDeleting) {
+          let cleaned = newValue.replace(/\D/g, '');
+          if (cleaned.length >= 4) cleaned = cleaned.slice(0, 4) + '/' + cleaned.slice(4);
+          if (cleaned.length >= 7) cleaned = cleaned.slice(0, 7) + '/' + cleaned.slice(7);
+          newValue = cleaned.slice(0, 10) as any;
+        }
       }
-      return { ...current, [field]: newValue };
+      const next = { ...current, [field]: newValue };
+      if (field === 'gender') {
+        if (newValue === 'male') { next.preferredHostel = 'Male Hostel'; next.studentWing = 'male'; }
+        else if (newValue === 'female') { next.preferredHostel = 'Female Hostel'; next.studentWing = 'female'; }
+      }
+      return next;
     });
     setAppErrors(current => ({ ...current, [field]: undefined }));
   };
@@ -235,7 +272,7 @@ export default function StudentApplications() {
       };
       if (existingApp) await api.put(`/applications/${existingApp._id}`, payload);
       else await api.post('/applications', payload);
-      Alert.alert('Success', 'Application processed.');
+      Alert.alert('Success', 'Application submitted successfully.');
       fetchData();
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.error || 'Failed to submit.');
@@ -243,7 +280,6 @@ export default function StudentApplications() {
   };
 
   const handleMedicalUpload = async () => {
-    if (existingApp && !isEditing) return;
     try {
       const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
       if (result.canceled || !result.assets) return;
@@ -255,19 +291,12 @@ export default function StudentApplications() {
     } catch (e) { Alert.alert('Error', 'Upload failed.'); } finally { setUploadingMedical(false); }
   };
 
-  // -------------------------------------------------------------
-  // CLEARANCE LOGIC
-  // -------------------------------------------------------------
   const updateClearanceField = <K extends keyof ClearanceFormState>(field: K, value: ClearanceFormState[K]) => {
-    if (existingClearance) return; // Prevent edit if already submitted
+    if (existingClearance) return;
     setClearanceForm(current => ({ ...current, [field]: value }));
   };
 
   const submitClearance = async () => {
-    if (!clearanceForm.accountNumber || !clearanceForm.bankName) {
-      Alert.alert('Validation Error', 'Please fill all bank details.');
-      return;
-    }
     try {
       setIsSubmitting(true);
       const payload = {
@@ -283,13 +312,9 @@ export default function StudentApplications() {
         },
       };
       await api.post('/clearance', payload);
-      Alert.alert('Success', 'Clearance form submitted successfully.');
+      Alert.alert('Success', 'Clearance form submitted.');
       fetchData();
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.error || 'Clearance submission failed.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch (e) { Alert.alert('Error', 'Failed to submit clearance.'); } finally { setIsSubmitting(false); }
   };
 
   // -------------------------------------------------------------
@@ -308,6 +333,30 @@ export default function StudentApplications() {
           editable={!isViewOnly}
           {...props}
         />
+      </View>
+    );
+  };
+
+  const renderOptions = (label: string, field: keyof ApplicationFormState, options: any[]) => {
+    const isViewOnly = activeTab === 'apply' && existingApp && !isEditing;
+    return (
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>{label}</Text>
+        <View style={styles.optionsRow}>
+          {options.map(opt => {
+            const isSelected = appForm[field] === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.optionBtn, isSelected && styles.optionBtnActive, isViewOnly && !isSelected && { opacity: 0.5 }]}
+                onPress={() => updateAppField(field, opt.value)}
+                disabled={isViewOnly}
+              >
+                <Text style={[styles.optionText, isSelected && styles.optionTextActive]}>{opt.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
     );
   };
@@ -350,31 +399,131 @@ export default function StudentApplications() {
                   </View>
                 )}
 
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}><User size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>PERSONAL DETAILS</Text></View>
-                  <View style={styles.grid}>
-                    {renderInput('FULL NAME', appForm.studentName, (v) => updateAppField('studentName', v), { fullWidth: true })}
-                    {renderInput('NIC', appForm.nic, (v) => updateAppField('nic', v))}
-                    {renderInput('GENDER', appForm.gender, () => {}, { editable: false })}
-                    {renderInput('DOB', appForm.dateOfBirth, (v) => updateAppField('dateOfBirth', v))}
-                    {renderInput('CONTACT', appForm.contactNumber, (v) => updateAppField('contactNumber', v))}
-                  </View>
-                </View>
-
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}><BookOpen size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>ACADEMIC INFORMATION</Text></View>
-                  <View style={styles.grid}>
-                    {renderInput('DEGREE', appForm.studentDegree, (v) => updateAppField('studentDegree', v))}
-                    {renderInput('YEAR', appForm.studentYear, (v) => updateAppField('studentYear', v))}
-                    {renderInput('REG NO', appForm.registrationNumber, (v) => updateAppField('registrationNumber', v))}
-                    {renderInput('FACULTY', appForm.faculty, (v) => updateAppField('faculty', v))}
-                  </View>
-                </View>
-
+                {/* CONDITIONAL UI: VIEW OR FORM */}
                 {existingApp && !isEditing ? (
-                  <TouchableOpacity style={styles.editBtn} onPress={() => setIsEditing(true)}><Edit size={18} color="#FFF" /><Text style={styles.editBtnText}>Edit Application</Text></TouchableOpacity>
+                  /* VIEW MODE */
+                  <>
+                    <View style={styles.section}>
+                      <View style={styles.sectionHeader}><User size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>PERSONAL DETAILS</Text></View>
+                      <View style={styles.grid}>
+                        {renderInput('FULL NAME', appForm.studentName, () => {}, { fullWidth: true })}
+                        {renderInput('NIC', appForm.nic, () => {})}
+                        {renderInput('GENDER', appForm.gender, () => {})}
+                        {renderInput('DATE OF BIRTH', appForm.dateOfBirth, () => {})}
+                        {renderInput('CONTACT NUMBER', appForm.contactNumber, () => {})}
+                        {renderInput('EMAIL', appForm.studentEmail, () => {}, { fullWidth: true })}
+                      </View>
+                    </View>
+
+                    <View style={styles.section}>
+                      <View style={styles.sectionHeader}><BookOpen size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>ACADEMIC INFORMATION</Text></View>
+                      <View style={styles.grid}>
+                        {renderInput('DEGREE PROGRAM', appForm.studentDegree, () => {})}
+                        {renderInput('YEAR', appForm.studentYear, () => {})}
+                        {renderInput('REGISTRATION NUMBER', appForm.registrationNumber, () => {})}
+                        {renderInput('FACULTY', appForm.faculty, () => {})}
+                      </View>
+                    </View>
+
+                    <View style={styles.section}>
+                      <View style={styles.sectionHeader}><Home size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>HOSTEL PREFERENCE</Text></View>
+                      <View style={styles.grid}>
+                        {renderInput('ROOM TYPE', appForm.roomType, () => {})}
+                        {renderInput('PREFERRED HOSTEL', appForm.preferredHostel, () => {})}
+                        {renderInput('DURATION OF STAY', appForm.durationOfStay, () => {})}
+                      </View>
+                    </View>
+
+                    <View style={styles.section}>
+                      <View style={styles.sectionHeader}><ShieldAlert size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>GUARDIAN & EMERGENCY</Text></View>
+                      <View style={styles.grid}>
+                        {renderInput('GUARDIAN NAME', appForm.guardianName, () => {})}
+                        {renderInput('GUARDIAN CONTACT', appForm.guardianContactNumber, () => {})}
+                        {renderInput('EMERGENCY CONTACT NAME', appForm.emergencyContactName, () => {})}
+                        {renderInput('EMERGENCY CONTACT PHONE', appForm.emergencyContactPhone, () => {})}
+                      </View>
+                    </View>
+
+                    <TouchableOpacity style={styles.editBtn} onPress={() => setIsEditing(true)}>
+                      <Edit size={18} color="#FFF" />
+                      <Text style={styles.editBtnText}>Edit Application</Text>
+                    </TouchableOpacity>
+                  </>
                 ) : (
-                  <TouchableOpacity style={styles.submitBtn} onPress={submitApplication}><Save size={18} color="#FFF" /><Text style={styles.submitBtnText}>{existingApp ? 'Update' : 'Submit'}</Text></TouchableOpacity>
+                  /* INTERACTIVE FORM MODE */
+                  <>
+                    <View style={styles.section}>
+                      <View style={styles.sectionHeader}><User size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>PERSONAL DETAILS</Text></View>
+                      {renderInput('FULL NAME', appForm.studentName, (v) => updateAppField('studentName', v), { fullWidth: true })}
+                      {renderInput('EMAIL', appForm.studentEmail, (v) => updateAppField('studentEmail', v), { fullWidth: true, editable: false })}
+                      {renderInput('NIC', appForm.nic, (v) => updateAppField('nic', v), { fullWidth: true })}
+                      {renderOptions('GENDER', 'gender', genderOptions)}
+                      {renderInput('DATE OF BIRTH', appForm.dateOfBirth, (v) => updateAppField('dateOfBirth', v), { fullWidth: true, placeholder: 'YYYY/MM/DD' })}
+                      {renderInput('CONTACT NUMBER', appForm.contactNumber, (v) => updateAppField('contactNumber', v), { fullWidth: true })}
+                      {renderInput('PERMANENT ADDRESS', appForm.permanentAddress, (v) => updateAppField('permanentAddress', v), { fullWidth: true, multiline: true })}
+                    </View>
+
+                    <View style={styles.section}>
+                      <View style={styles.sectionHeader}><BookOpen size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>ACADEMIC INFORMATION</Text></View>
+                      {renderOptions('FACULTY', 'faculty', facultyOptions)}
+                      {renderInput('DEGREE PROGRAM', appForm.studentDegree, (v) => updateAppField('studentDegree', v), { fullWidth: true })}
+                      {renderOptions('YEAR', 'studentYear', yearOptions)}
+                      {renderInput('REGISTRATION NUMBER', appForm.registrationNumber, (v) => updateAppField('registrationNumber', v), { fullWidth: true })}
+                    </View>
+
+                    <View style={styles.section}>
+                      <View style={styles.sectionHeader}><Home size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>HOSTEL PREFERENCES</Text></View>
+                      {renderOptions('ROOM TYPE', 'roomType', roomTypeOptions)}
+                      {renderInput('DURATION OF STAY', appForm.durationOfStay, (v) => updateAppField('durationOfStay', v), { fullWidth: true })}
+                    </View>
+
+                    <View style={styles.section}>
+                      <View style={styles.sectionHeader}><ShieldAlert size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>EMERGENCY CONTACTS</Text></View>
+                      {renderInput('EMERGENCY CONTACT NAME', appForm.emergencyContactName, (v) => updateAppField('emergencyContactName', v), { fullWidth: true })}
+                      {renderInput('EMERGENCY CONTACT PHONE', appForm.emergencyContactPhone, (v) => updateAppField('emergencyContactPhone', v), { fullWidth: true })}
+                      {renderInput('GUARDIAN NAME', appForm.guardianName, (v) => updateAppField('guardianName', v), { fullWidth: true })}
+                      {renderInput('GUARDIAN CONTACT NUMBER', appForm.guardianContactNumber, (v) => updateAppField('guardianContactNumber', v), { fullWidth: true })}
+                    </View>
+
+                    <View style={styles.section}>
+                      <View style={styles.sectionHeader}><Stethoscope size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>MEDICAL INFORMATION</Text></View>
+                      <View style={styles.switchRow}>
+                        <View style={styles.switchCopy}>
+                          <Text style={styles.label}>MEDICAL CONDITION?</Text>
+                          <Text style={styles.helperText}>Required by hostel staff</Text>
+                        </View>
+                        <Switch
+                          value={appForm.hasMedicalCondition}
+                          onValueChange={(val) => updateAppField('hasMedicalCondition', val)}
+                          trackColor={{ false: '#e2e8f0', true: Colors.roles.student + '80' }}
+                          thumbColor={appForm.hasMedicalCondition ? Colors.roles.student : '#f4f3f4'}
+                        />
+                      </View>
+                      {appForm.hasMedicalCondition && (
+                        <View style={styles.medicalFields}>
+                          {renderInput('CONDITION DETAILS', appForm.medicalConditionDetails, (v) => updateAppField('medicalConditionDetails', v), { fullWidth: true, multiline: true })}
+                          {renderInput('ALLERGIES', appForm.allergies, (v) => updateAppField('allergies', v), { fullWidth: true, multiline: true })}
+                          {renderInput('REGULAR MEDICATIONS', appForm.regularMedications, (v) => updateAppField('regularMedications', v), { fullWidth: true, multiline: true })}
+                          <View style={styles.inputGroup}>
+                            <Text style={styles.label}>MEDICAL REPORT</Text>
+                            <TouchableOpacity style={styles.uploadBtn} onPress={handleMedicalUpload} disabled={uploadingMedical}>
+                              <ClipboardList size={20} color={appForm.medicalReportUrl ? Colors.roles.student : '#94a3b8'} />
+                              <Text style={styles.uploadBtnText}>{uploadingMedical ? 'UPLOADING...' : appForm.medicalReportUrl ? 'CHANGE DOCUMENT' : 'ATTACH DOCUMENT'}</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+
+                    <TouchableOpacity style={styles.submitBtn} onPress={submitApplication} disabled={isSubmitting}>
+                      {isSubmitting ? <ActivityIndicator color="#FFF" /> : (
+                        <>
+                          <Save size={18} color="#FFF" />
+                          <Text style={styles.submitBtnText}>{existingApp ? 'UPDATE APPLICATION' : 'SUBMIT APPLICATION'}</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </>
                 )}
               </View>
             ) : (
@@ -384,8 +533,6 @@ export default function StudentApplications() {
                   <Text style={styles.title}>Clearance Form</Text>
                   <Text style={styles.subtitle}>Please review your allocation details below and submit for clearance.</Text>
                 </View>
-
-                {/* STUDENT DETAILS (Read Only) */}
                 <View style={styles.section}>
                   <View style={styles.sectionHeader}><User size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>STUDENT DETAILS</Text></View>
                   <View style={styles.grid}>
@@ -395,8 +542,6 @@ export default function StudentApplications() {
                     {renderInput('ROLL NUMBER', myAllocation?.studentRollNumber || existingApp?.studentRollNumber || 'N/A', () => {}, { editable: false })}
                   </View>
                 </View>
-
-                {/* ALLOCATION INFO (Read Only) */}
                 <View style={styles.section}>
                   <View style={styles.sectionHeader}><Layers size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>ALLOCATION INFO</Text></View>
                   <View style={styles.grid}>
@@ -407,8 +552,6 @@ export default function StudentApplications() {
                     {renderInput('BED ID', myAllocation?.bedId || 'N/A', () => {}, { editable: false })}
                   </View>
                 </View>
-
-                {/* REFUND BANK DETAILS */}
                 <View style={styles.section}>
                   <View style={styles.sectionHeader}><CreditCard size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>REFUND BANK DETAILS</Text></View>
                   <Text style={styles.helperText}>Where should we send your security deposit refund?</Text>
@@ -419,23 +562,8 @@ export default function StudentApplications() {
                     {renderInput('ACCOUNT NUMBER', clearanceForm.accountNumber, (v) => updateClearanceField('accountNumber', v), { fullWidth: true, placeholder: 'Enter account number', keyboardType: 'number-pad', editable: !existingClearance })}
                   </View>
                 </View>
-
-                {!existingClearance && (
-                  <View style={{ marginTop: 10 }}>
-                    <Text style={styles.hintText}>Verify all details before submitting.</Text>
-                    <TouchableOpacity style={styles.submitBtn} onPress={submitClearance}>
-                      <Save size={18} color="#FFF" />
-                      <Text style={styles.submitBtnText}>Submit Clearance</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {existingClearance && (
-                  <View style={styles.statusBanner}>
-                    <CheckCircle size={20} color="#10b981" />
-                    <Text style={{ marginLeft: 10, color: '#10b981', fontWeight: '800' }}>CLEARANCE SUBMITTED</Text>
-                  </View>
-                )}
+                {!existingClearance && <TouchableOpacity style={styles.submitBtn} onPress={submitClearance}><Save size={18} color="#FFF" /><Text style={styles.submitBtnText}>SUBMIT CLEARANCE</Text></TouchableOpacity>}
+                {existingClearance && <View style={styles.statusBanner}><CheckCircle size={20} color="#10b981" /><Text style={{ marginLeft: 10, color: '#10b981', fontWeight: '800' }}>CLEARANCE SUBMITTED</Text></View>}
               </View>
             )}
 
@@ -480,10 +608,20 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 12, fontWeight: '900', color: '#475569', letterSpacing: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   inputGroup: { marginBottom: 16 },
-  label: { fontSize: 9, fontWeight: '800', color: '#94a3b8', marginBottom: 8, letterSpacing: 0.5 },
+  label: { fontSize: 11, fontWeight: '900', color: '#94a3b8', marginBottom: 8, letterSpacing: 1 },
   input: { backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 16, minHeight: 48, fontSize: 14, fontWeight: '600', color: '#1e293b' },
   viewOnlyInput: { backgroundColor: '#f8fafc', color: '#64748b' },
-  helperText: { fontSize: 12, color: '#64748b', marginBottom: 16, fontWeight: '600' },
+  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  optionBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: '#f1f5f9' },
+  optionBtnActive: { backgroundColor: Colors.roles.student },
+  optionText: { fontSize: 12, fontWeight: '700', color: '#475569' },
+  optionTextActive: { color: '#FFF' },
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  switchCopy: { flex: 1 },
+  helperText: { fontSize: 11, color: '#64748b', marginTop: 2 },
+  medicalFields: { marginTop: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 16 },
+  uploadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#f8fafc', borderWidth: 2, borderColor: '#e2e8f0', borderStyle: 'dashed', borderRadius: 16, minHeight: 56 },
+  uploadBtnText: { fontSize: 14, fontWeight: '700', color: '#64748b' },
   hintText: { fontSize: 12, color: '#94a3b8', textAlign: 'center', marginBottom: 12 },
   editBtn: { backgroundColor: '#4f46e5', borderRadius: 16, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, elevation: 4 },
   editBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
