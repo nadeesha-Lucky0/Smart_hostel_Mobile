@@ -270,7 +270,7 @@ export default function StudentApplications() {
         registrationNumber: appForm.registrationNumber.toUpperCase(),
         dateOfBirth: appForm.dateOfBirth ? new Date(appForm.dateOfBirth.replace(/\//g, '-')).toISOString() : new Date().toISOString(),
       };
-      if (existingApp) await api.put(`/applications/${existingApp._id}`, payload);
+      if (existingApp) await api.put('/applications/me', payload);
       else await api.post('/applications', payload);
       Alert.alert('Success', 'Application submitted successfully.');
       fetchData();
