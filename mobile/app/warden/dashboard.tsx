@@ -244,6 +244,28 @@ export default function WardenDashboard() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Entry/Exit Log</Text>
+            <TouchableOpacity onPress={() => router.push('/warden/outside')}>
+              <Text style={styles.viewAllText}>View Details</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity 
+            style={styles.actionCardFull} 
+            onPress={() => router.push('/warden/outside')}
+          >
+             <View style={[styles.actionIcon, { backgroundColor: '#3B82F615' }]}>
+               <Users size={24} color="#3B82F6" />
+             </View>
+             <View style={{ flex: 1 }}>
+               <Text style={styles.actionTitle}>Outside & Late Students</Text>
+               <Text style={styles.actionSub}>Monitor students currently outside</Text>
+             </View>
+             <ChevronRight size={20} color={Colors.border} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent System Activity</Text>
             <TouchableOpacity onPress={() => router.push('/warden/logs')}>
               <Text style={styles.viewAllText}>View History</Text>
@@ -301,6 +323,8 @@ const styles = StyleSheet.create({
   actionCard: { width: 140, backgroundColor: Colors.surface, borderRadius: 20, padding: 16, gap: 12, borderWidth: 1, borderColor: Colors.border },
   actionIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   actionTitle: { fontSize: 13, fontWeight: '800', color: Colors.text, lineHeight: 18 },
+  actionSub: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
+  actionCardFull: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 20, padding: 16, gap: 12, borderWidth: 1, borderColor: Colors.border },
   movementCard: { backgroundColor: Colors.surface, borderRadius: 24, padding: 20, flexDirection: 'row', alignItems: 'center', elevation: 1 },
   movementItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   mIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

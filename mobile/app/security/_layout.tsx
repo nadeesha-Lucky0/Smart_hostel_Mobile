@@ -1,19 +1,12 @@
 import React from 'react';
 import { Drawer } from 'expo-router/drawer';
-import { DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
+import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { 
   LayoutDashboard, 
-  MapPin, 
-  ClipboardList, 
-  DollarSign, 
-  MessageSquare, 
-  Settings,
+  Users, 
   LogOut,
-  User,
-  ArrowLeft,
-  Menu,
-  Bell
+  Menu
 } from 'lucide-react-native';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
@@ -42,8 +35,8 @@ function CustomDrawerContent(props: any) {
             )}
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName} numberOfLines={1}>{user?.name || 'Student'}</Text>
-            <Text style={styles.profileRole}>Resident Student</Text>
+            <Text style={styles.profileName} numberOfLines={1}>{user?.name || 'Officer'}</Text>
+            <Text style={styles.profileRole}>Security Officer</Text>
           </View>
         </View>
       </View>
@@ -62,11 +55,11 @@ function CustomDrawerContent(props: any) {
   );
 }
 
-export default function StudentLayout() {
+export default function SecurityLayout() {
   return (
     <Drawer
       drawerContent={(props) => <CustomDrawerContent {...props} />}
-      screenOptions={{
+      screenOptions={({ navigation }) => ({
         headerStyle: {
           backgroundColor: Colors.surface,
           elevation: 0,
@@ -79,9 +72,9 @@ export default function StudentLayout() {
           fontSize: 18,
           color: Colors.text,
         },
-        headerTintColor: Colors.roles.student,
-        drawerActiveBackgroundColor: Colors.roles.student + '10', // 10% opacity
-        drawerActiveTintColor: Colors.roles.student,
+        headerTintColor: Colors.roles.security,
+        drawerActiveBackgroundColor: Colors.roles.security + '10',
+        drawerActiveTintColor: Colors.roles.security,
         drawerInactiveTintColor: Colors.textMuted,
         drawerLabelStyle: {
           marginLeft: 8,
@@ -93,79 +86,28 @@ export default function StudentLayout() {
           marginHorizontal: 12,
           marginVertical: 4,
         },
-      }}
+        headerLeft: () => (
+          <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ marginLeft: 16 }}>
+            <Menu size={24} color={Colors.roles.security} />
+          </TouchableOpacity>
+        ),
+      })}
     >
       <Drawer.Screen
         name="index"
         options={{
           drawerLabel: 'Dashboard',
-          title: 'Student Dashboard',
+          title: 'Security Panel',
           drawerIcon: ({ color, size }) => <LayoutDashboard size={size} color={color} />,
+          headerShown: false,
         }}
       />
       <Drawer.Screen
-        name="in-out"
+        name="outside"
         options={{
-          drawerLabel: 'Entry / Exit',
-          title: 'QR Pass & History',
-          drawerIcon: ({ color, size }) => <MapPin size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="applications"
-        options={{
-          drawerLabel: 'Applications',
-          title: 'My Applications',
-          drawerIcon: ({ color, size }) => <ClipboardList size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="payments"
-        options={{
-          drawerLabel: 'Payments',
-          title: 'Finance & Dues',
-          drawerIcon: ({ color, size }) => <DollarSign size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="complaints"
-        options={{
-          drawerLabel: 'Complaints',
-          title: 'Grievance Portal',
-          drawerIcon: ({ color, size }) => <MessageSquare size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="notices"
-        options={{
-          drawerLabel: 'Notices',
-          title: 'Hostel Broadcasts',
-          drawerIcon: ({ color, size }) => <Bell size={size} color={color} />,
-        }}
-      />
-      <Drawer.Screen
-        name="settings"
-        options={({ navigation }) => ({
-          drawerLabel: 'Settings',
-          title: 'My Profile',
-          drawerIcon: ({ color, size }) => <Settings size={size} color={color} />,
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => (navigation as any).navigate('index')} style={{ marginLeft: 16 }}>
-              <ArrowLeft size={24} color={Colors.roles.student} />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <TouchableOpacity onPress={() => (navigation as any).openDrawer()} style={{ marginRight: 16 }}>
-              <Menu size={24} color={Colors.roles.student} />
-            </TouchableOpacity>
-          ),
-        })}
-      />
-      <Drawer.Screen
-        name="scanner"
-        options={{
-          drawerItemStyle: { display: 'none' },
-          title: 'Scan Gate QR',
+          drawerLabel: 'Outside Students',
+          title: 'Outside & Late Students',
+          drawerIcon: ({ color, size }) => <Users size={size} color={color} />,
           headerShown: true,
         }}
       />
@@ -194,24 +136,24 @@ const styles = StyleSheet.create({
     padding: 2,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: Colors.roles.student + '30',
+    borderColor: Colors.roles.security + '30',
   },
   avatar: {
     width: 52,
     height: 52,
     borderRadius: 18,
-    backgroundColor: Colors.roles.student + '15',
+    backgroundColor: Colors.roles.security + '15',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   initialsContainer: {
-    backgroundColor: Colors.roles.student + '15',
+    backgroundColor: Colors.roles.security + '15',
   },
   avatarText: {
     fontSize: 24,
     fontWeight: '800',
-    color: Colors.roles.student,
+    color: Colors.roles.security,
   },
   profileInfo: {
     flex: 1,
@@ -223,7 +165,7 @@ const styles = StyleSheet.create({
   },
   profileRole: {
     fontSize: 12,
-    color: Colors.roles.student,
+    color: Colors.roles.security,
     fontWeight: '700',
     marginTop: 2,
     textTransform: 'uppercase',

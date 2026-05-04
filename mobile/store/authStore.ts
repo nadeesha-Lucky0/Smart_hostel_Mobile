@@ -8,6 +8,7 @@ interface User {
   role: 'student' | 'warden' | 'admin' | 'security' | 'financial';
   phoneNumber?: string;
   profilePicture?: string;
+  studentId?: string;
 }
 
 interface AuthState {

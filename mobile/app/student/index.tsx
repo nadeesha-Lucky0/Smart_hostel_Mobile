@@ -10,8 +10,10 @@ import {
   ArrowRight,
   User,
   ShieldAlert,
-  Camera
+  Camera,
+  QrCode
 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import api from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
@@ -221,7 +223,7 @@ export default function StudentDashboard() {
           </TouchableOpacity>
         </View>
 
-        {recentNotice ? (
+        {recentNotice && (
           <TouchableOpacity 
             style={styles.noticeCard} 
             onPress={() => router.push('/student/notices')}
@@ -237,22 +239,7 @@ export default function StudentDashboard() {
             </View>
             <ArrowRight size={18} color={Colors.border} />
           </TouchableOpacity>
-        ) : (
-          <View style={[styles.noticeCard, { justifyContent: 'center', padding: 30 }]}>
-            <Text style={{ color: Colors.textMuted, fontWeight: '600' }}>No recent notices</Text>
-          </View>
         )}
-
-        <View style={styles.quickEntrySection}>
-          <Text style={styles.sectionTitle}>Movement Summary</Text>
-          <View style={styles.entryCard}>
-             <MapPin size={24} color={Colors.roles.student} />
-             <View style={styles.entryInfo}>
-               <Text style={styles.entryStatus}>Currently: INSIDE HOSTEL</Text>
-               <Text style={styles.entryTime}>Last update: Today, 08:30 AM</Text>
-             </View>
-          </View>
-        </View>
       </View>
     </ScrollView>
   );
@@ -299,4 +286,9 @@ const styles = StyleSheet.create({
   entryInfo: { flex: 1 },
   entryStatus: { fontSize: 14, fontWeight: '800', color: Colors.text },
   entryTime: { fontSize: 12, color: Colors.textMuted, marginTop: 2, fontWeight: '600' },
+  scanCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, padding: 16, borderRadius: 20, elevation: 1, marginTop: 16, borderWidth: 1, borderColor: Colors.border },
+  scanIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: Colors.roles.student, alignItems: 'center', justifyContent: 'center' },
+  scanInfo: { flex: 1, marginLeft: 16 },
+  scanTitle: { fontSize: 15, fontWeight: '800', color: Colors.text },
+  scanSub: { fontSize: 12, color: Colors.textMuted, marginTop: 2, fontWeight: '500' },
 });
