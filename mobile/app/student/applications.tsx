@@ -303,7 +303,12 @@ export default function StudentApplications() {
         studentRollNumber: myAllocation?.studentRollNumber || existingApp?.studentRollNumber || '',
         studentName: myAllocation?.studentName || existingApp?.studentName || user?.name || '',
         studentEmail: user?.email || '',
-        roomNumber: myAllocation?.roomnumber || '',
+        studentPhone: existingApp?.contactNumber || '',
+        wing: myAllocation?.studentWing || existingApp?.studentWing || '',
+        floorNumber: Number(myAllocation?.floorNumber || 0),
+        roomType: myAllocation?.roomType || existingApp?.roomType || '',
+        roomNumber: Number(myAllocation?.roomnumber || 0),
+        bedId: myAllocation?.bedId || 'N/A',
         bankDetails: {
           bankName: clearanceForm.bankName,
           branchName: clearanceForm.branchName,
