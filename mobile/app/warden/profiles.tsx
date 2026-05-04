@@ -147,19 +147,45 @@ export default function WardenProfiles() {
   return (
     <View style={styles.container}>
 
-      <View style={styles.tabWrapper}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScroll}>
+      <View style={styles.tabContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.tabScroll}
+        >
           {TABS.map(tab => (
             <TouchableOpacity 
               key={tab.id} 
-              style={[styles.tabBtn, activeTab === tab.id && styles.activeTabBtn]}
+              style={[
+                styles.tabBox, 
+                activeTab === tab.id && styles.activeTabBox
+              ]}
               onPress={() => setActiveTab(tab.id)}
             >
-              <Text style={[styles.tabBtnText, activeTab === tab.id && styles.activeTabBtnText]}>{tab.label}</Text>
-              {activeTab === tab.id && <View style={styles.activeUnderline} />}
+              <Text style={[
+                styles.tabBoxText, 
+                activeTab === tab.id && styles.activeTabBoxText
+              ]}>
+                {tab.label}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
+      </View>
+
+      <View style={styles.screenHeader}>
+        <Text style={styles.screenTitle}>
+          {activeTab === 'warden' ? 'Student Activation' :
+           activeTab === 'payments' ? 'Monthly Payments' :
+           activeTab === 'clearance' ? 'Student Clearance' :
+           'Departed Students'}
+        </Text>
+        <Text style={styles.screenSub}>
+          {activeTab === 'warden' ? 'Manage student profiles and status' :
+           activeTab === 'payments' ? 'Review and verify student payment slips' :
+           activeTab === 'clearance' ? 'Manage student check-out and dues' :
+           'View students who have left the hostel'}
+        </Text>
       </View>
 
       {activeTab === 'payments' ? (
@@ -397,13 +423,59 @@ const styles = StyleSheet.create({
   sectionHeader: { paddingHorizontal: 20, marginTop: 20, marginBottom: 16 },
   sectionTitle: { fontSize: 20, fontWeight: '900', color: Colors.text },
   sectionSub: { fontSize: 11, fontWeight: '600', color: Colors.textMuted, marginTop: 2 },
-  tabWrapper: { backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  tabScroll: { paddingHorizontal: 16, gap: 24, height: 50 },
-  tabBtn: { paddingVertical: 14, paddingHorizontal: 4, position: 'relative', justifyContent: 'center' },
-  activeTabBtn: {},
-  tabBtnText: { fontSize: 14, fontWeight: '700', color: Colors.textMuted },
-  activeTabBtnText: { color: Colors.roles.warden },
-  activeUnderline: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, backgroundColor: Colors.roles.warden, borderTopLeftRadius: 3, borderTopRightRadius: 3 },
+  tabContainer: { 
+    backgroundColor: Colors.surface, 
+    paddingVertical: 12,
+    borderBottomWidth: 1, 
+    borderBottomColor: Colors.border 
+  },
+  tabScroll: { 
+    paddingHorizontal: 16, 
+    gap: 12,
+    alignItems: 'center'
+  },
+  tabBox: { 
+    paddingVertical: 10, 
+    paddingHorizontal: 20, 
+    borderRadius: 14,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border
+  },
+  activeTabBox: { 
+    backgroundColor: Colors.roles.warden,
+    borderColor: Colors.roles.warden,
+    elevation: 4,
+    shadowColor: Colors.roles.warden,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8
+  },
+  tabBoxText: { 
+    fontSize: 13, 
+    fontWeight: '700', 
+    color: Colors.textMuted 
+  },
+  activeTabBoxText: { 
+    color: '#FFFFFF' 
+  },
+  screenHeader: { 
+    paddingHorizontal: 20, 
+    paddingTop: 24, 
+    paddingBottom: 12,
+    backgroundColor: Colors.surface 
+  },
+  screenTitle: { 
+    fontSize: 24, 
+    fontWeight: '900', 
+    color: Colors.text 
+  },
+  screenSub: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    color: Colors.textMuted,
+    marginTop: 2 
+  },
   searchContainer: { padding: 16, backgroundColor: Colors.surface },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, paddingHorizontal: 12, borderRadius: 16, height: 48, borderWidth: 1, borderColor: Colors.border, gap: 10 },
   searchInput: { flex: 1, fontSize: 14, fontWeight: '600' },

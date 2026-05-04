@@ -769,11 +769,9 @@ export default function WardenNotices() {
   return (
     <View style={ss.container}>
 
-      <View style={ss.sectionHeader}>
-        <View>
-          <Text style={ss.sectionTitle}>Hostel Notices</Text>
-          <Text style={ss.sectionSub}>Broadcast Announcements</Text>
-        </View>
+      <View style={ss.screenHeader}>
+        <Text style={ss.screenTitle}>Hostel Notices</Text>
+        <Text style={ss.screenSub}>Broadcast Announcements</Text>
       </View>
 
       <View style={ss.summaryBar}>
@@ -835,6 +833,23 @@ const ss = StyleSheet.create({
   safeArea:  { flex: 1, backgroundColor: Colors.background },
   flex:      { flex: 1 },
   container: { flex: 1, backgroundColor: Colors.background },
+  screenHeader: { 
+    paddingHorizontal: 20, 
+    paddingTop: 24, 
+    paddingBottom: 12,
+    backgroundColor: Colors.surface 
+  },
+  screenTitle: { 
+    fontSize: 24, 
+    fontWeight: '900', 
+    color: Colors.text 
+  },
+  screenSub: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    color: Colors.textMuted,
+    marginTop: 2 
+  },
   headerContainer: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
   centered:  { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
 

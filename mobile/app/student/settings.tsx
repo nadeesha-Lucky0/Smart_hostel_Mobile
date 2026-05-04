@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import Colors from '../../constants/Colors';
-import { User, Phone, Lock, Save, Camera, X, Check, Eye, EyeOff, Bell, ChevronRight } from 'lucide-react-native';
+import { User, Phone, Lock, Save, Camera, X, Check, Eye, EyeOff } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
@@ -266,17 +266,7 @@ export default function StudentSettings() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.label}>Notifications</Text>
-          <TouchableOpacity 
-            style={styles.menuItem} 
-            onPress={() => router.push('/student/notices')}
-          >
-            <View style={styles.menuIcon}>
-              <Bell size={20} color={Colors.roles.student} />
-            </View>
-            <Text style={styles.menuText}>View Hostel Notices</Text>
-            <ChevronRight size={20} color={Colors.textMuted} />
-          </TouchableOpacity>
+
 
           <TouchableOpacity 
             style={[styles.saveBtn, loading && styles.disabledBtn]} 

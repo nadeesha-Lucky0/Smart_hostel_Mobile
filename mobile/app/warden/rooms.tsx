@@ -276,6 +276,11 @@ export default function RoomManagement() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.screenHeader}>
+        <Text style={styles.screenTitle}>Floor & Room</Text>
+        <Text style={styles.screenSub}>Manage floors, rooms and bed capacity</Text>
+      </View>
+      
       <View style={styles.wingHeader}>
         <View style={styles.wingToggle}>
           <TouchableOpacity 
@@ -452,6 +457,23 @@ export default function RoomManagement() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  screenHeader: { 
+    paddingHorizontal: 20, 
+    paddingTop: 24, 
+    paddingBottom: 12,
+    backgroundColor: Colors.surface 
+  },
+  screenTitle: { 
+    fontSize: 24, 
+    fontWeight: '900', 
+    color: Colors.text 
+  },
+  screenSub: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    color: Colors.textMuted,
+    marginTop: 2 
+  },
   wingHeader: { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
   wingToggle: { flexDirection: 'row', backgroundColor: Colors.background, padding: 4, borderRadius: 14, gap: 4 },
   wingBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },

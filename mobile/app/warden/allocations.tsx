@@ -205,10 +205,8 @@ export default function WardenAllocations() {
       </View>
 
       <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>Student Allocations</Text>
-          <Text style={styles.sectionSub}>Assign Rooms & Manage Beds</Text>
-        </View>
+        <Text style={styles.sectionTitle}>Student Allocations</Text>
+        <Text style={styles.sectionSub}>Assign Rooms & Manage Beds</Text>
       </View>
 
       <View style={[styles.subHeaderRow, { borderTopWidth: 1, borderTopColor: Colors.border }]}>
@@ -558,9 +556,23 @@ const styles = StyleSheet.create({
   wingBtnTextActive: {
     color: '#FFF',
   },
-  sectionHeader: { paddingHorizontal: 20, marginTop: 20, marginBottom: 16 },
-  sectionTitle: { fontSize: 20, fontWeight: '900', color: Colors.text },
-  sectionSub: { fontSize: 11, fontWeight: '600', color: Colors.textMuted, marginTop: 2 },
+  sectionHeader: { 
+    paddingHorizontal: 20, 
+    paddingTop: 24, 
+    paddingBottom: 12,
+    backgroundColor: Colors.surface 
+  },
+  sectionTitle: { 
+    fontSize: 24, 
+    fontWeight: '900', 
+    color: Colors.text 
+  },
+  sectionSub: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    color: Colors.textMuted,
+    marginTop: 2 
+  },
   subHeaderRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border, marginBottom: 12 },
   subTabGroup: { flexDirection: 'row', backgroundColor: Colors.background, padding: 4, borderRadius: 12, gap: 4, margin: 16 },
   miniTab: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 6 },

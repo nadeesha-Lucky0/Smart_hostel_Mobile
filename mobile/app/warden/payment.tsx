@@ -130,6 +130,11 @@ export default function WardenPayment() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.screenHeader}>
+        <Text style={styles.screenTitle}>Monthly Payments</Text>
+        <Text style={styles.screenSub}>Review and verify student payment slips</Text>
+      </View>
+
       <View style={styles.subTabBar}>
         <View style={styles.pillToggle}>
           <TouchableOpacity 
@@ -237,6 +242,23 @@ export default function WardenPayment() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  screenHeader: { 
+    paddingHorizontal: 20, 
+    paddingTop: 24, 
+    paddingBottom: 12,
+    backgroundColor: Colors.surface 
+  },
+  screenTitle: { 
+    fontSize: 24, 
+    fontWeight: '900', 
+    color: Colors.text 
+  },
+  screenSub: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    color: Colors.textMuted,
+    marginTop: 2 
+  },
   subTabBar: { padding: 16, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
   pillToggle: { flexDirection: 'row', backgroundColor: Colors.background, padding: 4, borderRadius: 14, gap: 4 },
   pillBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },

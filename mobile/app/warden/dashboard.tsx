@@ -47,13 +47,16 @@ const StatCard = ({ title, value, sub, icon: Icon, color, trend }: any) => (
   </View>
 );
 
-const QuickAction = ({ title, icon: Icon, color, onPress }: any) => (
+const QuickAction = ({ title, subtitle, icon: Icon, color, onPress }: any) => (
   <TouchableOpacity style={styles.actionCard} onPress={onPress}>
     <View style={[styles.actionIcon, { backgroundColor: color + '15' }]}>
       <Icon size={24} color={color} />
     </View>
-    <Text style={styles.actionTitle}>{title}</Text>
-    <ArrowUpRight size={14} color={Colors.textMuted} />
+    <View style={styles.actionTextContainer}>
+      <Text style={styles.actionTitle}>{title}</Text>
+      {subtitle && <Text style={styles.actionSubtitle}>{subtitle}</Text>}
+    </View>
+    <ArrowUpRight size={14} color={Colors.textMuted} style={styles.actionArrow} />
   </TouchableOpacity>
 );
 
@@ -100,7 +103,7 @@ export default function WardenDashboard() {
     );
   }
 
-  const currentStats = activeWing === 'all' ? stats : (activeWing === 'male' ? stats.maleStats : stats.femaleStats);
+  const currentStats = stats ? (activeWing === 'all' ? stats : (activeWing === 'male' ? stats.maleStats : stats.femaleStats)) : null;
 
   return (
     <ScrollView 
@@ -186,27 +189,45 @@ export default function WardenDashboard() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.actionsRow}>
             <QuickAction 
               title="Activate Profiles" 
+              subtitle="Manage student status"
               icon={UserCheck} 
               color={Colors.roles.warden} 
               onPress={() => router.push('/warden/profiles')}
             />
             <QuickAction 
               title="Payment Review" 
+              subtitle="Verify monthly dues"
               icon={CreditCard} 
               color="#10B981" 
               onPress={() => router.push('/warden/payment')}
             />
             <QuickAction 
               title="Room Allocation" 
+              subtitle="Assign rooms & beds"
               icon={Layout} 
               color="#F59E0B" 
               onPress={() => router.push('/warden/allocations')}
             />
             <QuickAction 
-              title="Student Logs" 
-              icon={Activity} 
+              title="Floor & Room" 
+              subtitle="Manage hostel layout"
+              icon={Home} 
               color="#6366F1" 
-              onPress={() => router.push('/warden/logs')}
+              onPress={() => router.push('/warden/allocations')} // Assuming this goes to allocations or similar
+            />
+            <QuickAction 
+              title="Hostel Notices" 
+              subtitle="Broadcast announcements"
+              icon={Activity} 
+              color={Colors.accent} 
+              onPress={() => router.push('/warden/notices')}
+            />
+            <QuickAction 
+              title="Student Logs" 
+              subtitle="Entry & exit history"
+              icon={Clock} 
+              color={Colors.textMuted} 
+              onPress={() => router.push('/warden/records')}
             />
           </ScrollView>
         </View>
@@ -267,7 +288,7 @@ export default function WardenDashboard() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent System Activity</Text>
-            <TouchableOpacity onPress={() => router.push('/warden/logs')}>
+            <TouchableOpacity onPress={() => router.push('/warden/records')}>
               <Text style={styles.viewAllText}>View History</Text>
             </TouchableOpacity>
           </View>
@@ -320,10 +341,13 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '800', color: Colors.text },
   viewAllText: { fontSize: 14, fontWeight: '700', color: Colors.roles.warden },
   actionsRow: { gap: 12 },
-  actionCard: { width: 140, backgroundColor: Colors.surface, borderRadius: 20, padding: 16, gap: 12, borderWidth: 1, borderColor: Colors.border },
-  actionIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  actionTitle: { fontSize: 13, fontWeight: '800', color: Colors.text, lineHeight: 18 },
+  actionCard: { width: 180, backgroundColor: Colors.surface, borderRadius: 24, padding: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.border, marginRight: 12 },
+  actionIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  actionTextContainer: { flex: 1, gap: 2 },
+  actionTitle: { fontSize: 13, fontWeight: '800', color: Colors.text },
+  actionSubtitle: { fontSize: 10, color: Colors.textMuted, fontWeight: '600' },
   actionSub: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
+  actionArrow: { marginLeft: 4 },
   actionCardFull: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 20, padding: 16, gap: 12, borderWidth: 1, borderColor: Colors.border },
   movementCard: { backgroundColor: Colors.surface, borderRadius: 24, padding: 20, flexDirection: 'row', alignItems: 'center', elevation: 1 },
   movementItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
