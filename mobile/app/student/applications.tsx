@@ -32,7 +32,9 @@ import {
   CreditCard,
   Layers,
   Layout,
-  Stethoscope
+  Stethoscope,
+  Trash2,
+  AlertCircle
 } from 'lucide-react-native';
 import api from '../../services/api';
 import * as DocumentPicker from 'expo-document-picker';
@@ -145,22 +147,13 @@ const facultyOptions = [
   { label: 'Humanities', value: 'humanities' },
 ];
 
-const hostelOptions = [
-  { label: 'Male Hostel', value: 'Male Hostel' },
-  { label: 'Female Hostel', value: 'Female Hostel' },
-];
-
-const wingOptions = [
-  { label: 'Male', value: 'male' },
-  { label: 'Female', value: 'female' },
-];
-
 export default function StudentApplications() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('apply');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingMedical, setUploadingMedical] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingClearance, setIsEditingClearance] = useState(false);
 
   // App Form State
   const [appForm, setAppForm] = useState<ApplicationFormState>({
@@ -222,8 +215,15 @@ export default function StudentApplications() {
             accountHolderName: c.bankDetails?.accountHolderName || '',
             accountNumber: c.bankDetails?.accountNumber || '',
           });
+          setIsEditingClearance(false);
+        } else {
+          setExistingClearance(null);
+          setClearanceForm({ ...initialClearanceForm, studentName: user?.name || '', email: user?.email || '' });
         }
-      } catch (e) {}
+      } catch (e) {
+        setExistingClearance(null);
+        setClearanceForm({ ...initialClearanceForm, studentName: user?.name || '', email: user?.email || '' });
+      }
     } catch (err: any) {
       console.error('Data fetch error:', err);
     } finally {
@@ -291,12 +291,18 @@ export default function StudentApplications() {
     } catch (e) { Alert.alert('Error', 'Upload failed.'); } finally { setUploadingMedical(false); }
   };
 
+  // -------------------------------------------------------------
+  // CLEARANCE LOGIC
+  // -------------------------------------------------------------
   const updateClearanceField = <K extends keyof ClearanceFormState>(field: K, value: ClearanceFormState[K]) => {
-    if (existingClearance) return;
     setClearanceForm(current => ({ ...current, [field]: value }));
   };
 
   const submitClearance = async () => {
+    if (!myAllocation && !existingApp) {
+        Alert.alert('Error', 'You need an active hostel allocation to submit a clearance form.');
+        return;
+    }
     try {
       setIsSubmitting(true);
       const payload = {
@@ -322,11 +328,56 @@ export default function StudentApplications() {
     } catch (e) { Alert.alert('Error', 'Failed to submit clearance.'); } finally { setIsSubmitting(false); }
   };
 
+  const updateClearanceBankDetails = async () => {
+    try {
+        setIsSubmitting(true);
+        await api.patch('/clearance/me/bank', {
+            bankName: clearanceForm.bankName,
+            branchName: clearanceForm.branchName,
+            accountHolderName: clearanceForm.accountHolderName,
+            accountNumber: clearanceForm.accountNumber,
+        });
+        Alert.alert('Success', 'Bank details updated successfully.');
+        setIsEditingClearance(false);
+        fetchData();
+    } catch (e) {
+        Alert.alert('Error', 'Failed to update bank details.');
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const deleteClearanceRequest = () => {
+    Alert.alert(
+        'Delete Clearance',
+        'Are you sure you want to delete this clearance request? You will need to submit a new one.',
+        [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+                text: 'Delete', 
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        setIsSubmitting(true);
+                        await api.delete('/clearance/me');
+                        Alert.alert('Success', 'Clearance request deleted.');
+                        fetchData();
+                    } catch (e) {
+                        Alert.alert('Error', 'Failed to delete clearance request.');
+                    } finally {
+                        setIsSubmitting(false);
+                    }
+                }
+            }
+        ]
+    );
+  };
+
   // -------------------------------------------------------------
   // RENDER HELPERS
   // -------------------------------------------------------------
   const renderInput = (label: string, value: string, onChange: (val: string) => void, props?: any) => {
-    const isViewOnly = props?.editable === false || (activeTab === 'apply' && existingApp && !isEditing);
+    const isViewOnly = props?.editable === false || (activeTab === 'apply' && existingApp && !isEditing) || (activeTab === 'clearance' && existingClearance && !isEditingClearance);
     return (
       <View style={[styles.inputGroup, props?.fullWidth ? { width: '100%' } : { width: '48%' }]}>
         <Text style={styles.label}>{label}</Text>
@@ -395,7 +446,7 @@ export default function StudentApplications() {
                 </View>
 
                 {existingApp && (
-                  <View style={styles.statusBanner}>
+                  <View style={[styles.statusBanner, { borderLeftColor: getStatusColor(existingApp.applicationStatus) }]}>
                     <View style={styles.statusLeft}>
                       <View style={[styles.statusDot, { backgroundColor: getStatusColor(existingApp.applicationStatus) }]} />
                       <Text style={[styles.statusText, { color: getStatusColor(existingApp.applicationStatus) }]}>{existingApp.applicationStatus.toUpperCase()}</Text>
@@ -538,6 +589,17 @@ export default function StudentApplications() {
                   <Text style={styles.title}>Clearance Form</Text>
                   <Text style={styles.subtitle}>Please review your allocation details below and submit for clearance.</Text>
                 </View>
+
+                {existingClearance && (
+                  <View style={[styles.statusBanner, { borderLeftColor: getStatusColor(existingClearance.status) }]}>
+                    <View style={styles.statusLeft}>
+                      <View style={[styles.statusDot, { backgroundColor: getStatusColor(existingClearance.status) }]} />
+                      <Text style={[styles.statusText, { color: getStatusColor(existingClearance.status) }]}>{existingClearance.status.toUpperCase()}</Text>
+                      <Text style={styles.statusId}> • SUBMITTED ON {new Date(existingClearance.submittedAt).toLocaleDateString()}</Text>
+                    </View>
+                  </View>
+                )}
+
                 <View style={styles.section}>
                   <View style={styles.sectionHeader}><User size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>STUDENT DETAILS</Text></View>
                   <View style={styles.grid}>
@@ -561,14 +623,67 @@ export default function StudentApplications() {
                   <View style={styles.sectionHeader}><CreditCard size={16} color={Colors.roles.student} /><Text style={styles.sectionTitle}>REFUND BANK DETAILS</Text></View>
                   <Text style={styles.helperText}>Where should we send your security deposit refund?</Text>
                   <View style={styles.grid}>
-                    {renderInput('ACCOUNT HOLDER NAME', clearanceForm.accountHolderName, (v) => updateClearanceField('accountHolderName', v), { fullWidth: true, placeholder: 'Enter full name as in bank', editable: !existingClearance })}
-                    {renderInput('BANK NAME', clearanceForm.bankName, (v) => updateClearanceField('bankName', v), { fullWidth: true, placeholder: 'e.g. Bank of Ceylon, HNB', editable: !existingClearance })}
-                    {renderInput('BRANCH', clearanceForm.branchName, (v) => updateClearanceField('branchName', v), { fullWidth: true, placeholder: 'Branch location', editable: !existingClearance })}
-                    {renderInput('ACCOUNT NUMBER', clearanceForm.accountNumber, (v) => updateClearanceField('accountNumber', v), { fullWidth: true, placeholder: 'Enter account number', keyboardType: 'number-pad', editable: !existingClearance })}
+                    {renderInput('ACCOUNT HOLDER NAME', clearanceForm.accountHolderName, (v) => updateClearanceField('accountHolderName', v), { fullWidth: true, placeholder: 'Enter full name as in bank' })}
+                    {renderInput('BANK NAME', clearanceForm.bankName, (v) => updateClearanceField('bankName', v), { fullWidth: true, placeholder: 'e.g. Bank of Ceylon, HNB' })}
+                    {renderInput('BRANCH', clearanceForm.branchName, (v) => updateClearanceField('branchName', v), { fullWidth: true, placeholder: 'Branch location' })}
+                    {renderInput('ACCOUNT NUMBER', clearanceForm.accountNumber, (v) => updateClearanceField('accountNumber', v), { fullWidth: true, placeholder: 'Enter account number', keyboardType: 'number-pad' })}
                   </View>
                 </View>
-                {!existingClearance && <TouchableOpacity style={styles.submitBtn} onPress={submitClearance}><Save size={18} color="#FFF" /><Text style={styles.submitBtnText}>SUBMIT CLEARANCE</Text></TouchableOpacity>}
-                {existingClearance && <View style={styles.statusBanner}><CheckCircle size={20} color="#10b981" /><Text style={{ marginLeft: 10, color: '#10b981', fontWeight: '800' }}>CLEARANCE SUBMITTED</Text></View>}
+
+                {/* ACTION BUTTONS */}
+                {!existingClearance ? (
+                  <TouchableOpacity style={styles.submitBtn} onPress={submitClearance} disabled={isSubmitting}>
+                    {isSubmitting ? <ActivityIndicator color="#FFF" /> : (
+                      <>
+                        <Save size={18} color="#FFF" />
+                        <Text style={styles.submitBtnText}>SUBMIT CLEARANCE</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                ) : (
+                  <View style={{ gap: 12 }}>
+                    {/* EDIT/SAVE FLOW FOR CLEARANCE */}
+                    {!isEditingClearance ? (
+                        <>
+                            {(existingClearance.status === 'Pending' || existingClearance.status === 'In Progress') && (
+                            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#4f46e5' }]} onPress={() => setIsEditingClearance(true)}>
+                                <Edit size={18} color="#FFF" />
+                                <Text style={styles.submitBtnText}>EDIT BANK DETAILS</Text>
+                            </TouchableOpacity>
+                            )}
+                        </>
+                    ) : (
+                        <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#10b981' }]} onPress={updateClearanceBankDetails} disabled={isSubmitting}>
+                            {isSubmitting ? <ActivityIndicator color="#FFF" /> : (
+                            <>
+                                <Save size={18} color="#FFF" />
+                                <Text style={styles.submitBtnText}>SAVE BANK DETAILS</Text>
+                            </>
+                            )}
+                        </TouchableOpacity>
+                    )}
+                    
+                    {existingClearance.status === 'Pending' && !isEditingClearance && (
+                      <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#ef4444' }]} onPress={deleteClearanceRequest} disabled={isSubmitting}>
+                        {isSubmitting ? <ActivityIndicator color="#FFF" /> : (
+                          <>
+                            <Trash2 size={18} color="#FFF" />
+                            <Text style={styles.submitBtnText}>DELETE CLEARANCE REQUEST</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    )}
+
+                    {(existingClearance.status === 'Approved' || existingClearance.status === 'Rejected') && (
+                      <View style={[styles.statusBanner, { justifyContent: 'center', backgroundColor: '#f1f5f9', borderLeftWidth: 0 }]}>
+                         <AlertCircle size={20} color="#64748b" />
+                         <Text style={{ marginLeft: 10, color: '#64748b', fontWeight: '800' }}>
+                            CLEARANCE {existingClearance.status.toUpperCase()} - NO FURTHER EDITS
+                         </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             )}
 
@@ -582,9 +697,12 @@ export default function StudentApplications() {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'Activated':
+    case 'Approved':
     case 'Room Allocated': return '#10b981';
-    case 'Pending': return '#f59e0b';
-    case 'Rejected': return '#ef4444';
+    case 'Pending':
+    case 'In Progress': return '#f59e0b';
+    case 'Rejected':
+    case 'Deactivated': return '#ef4444';
     default: return '#6b7280';
   }
 };
