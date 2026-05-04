@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, RefreshControl, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, RefreshControl, Platform, Alert, Image } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
 import { 
@@ -16,8 +16,6 @@ import {
 import { useRouter } from 'expo-router';
 import api from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'react-native';
-import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
