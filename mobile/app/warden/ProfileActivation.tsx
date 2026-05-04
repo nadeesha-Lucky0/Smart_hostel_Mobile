@@ -55,13 +55,22 @@ export default function ProfileActivation() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await api.get('/applications?status=Room Allocated');
+      const response = await api.get('/applications');
       let data = response.data;
 
-      const formatted = data.map((s: any) => ({
-        ...s,
-        approvalStatus: s.approvalStatus?.toLowerCase() || 'pending',
-      }));
+      const formatted = data.map((s: any) => {
+        const status = s.applicationStatus?.toLowerCase() || 'pending';
+        let approvalStatus = 'pending';
+        
+        if (['activated', 'approved', 'active'].includes(status)) approvalStatus = 'approved';
+        else if (['rejected', 'deactivated', 'deactive'].includes(status)) approvalStatus = 'rejected';
+        else if (status === 'room allocated' || status === 'pending') approvalStatus = 'pending';
+
+        return {
+          ...s,
+          approvalStatus,
+        };
+      });
 
       const filtered = formatted.filter((s: any) => s.approvalStatus === activeTab);
       setStudents(Array.isArray(filtered) ? filtered : []);
@@ -107,11 +116,22 @@ export default function ProfileActivation() {
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'pending': return '#F59E0B';
+      case 'active':
+      case 'activated':
       case 'approved': return '#10B981';
-      case 'rejected': return '#EF4444';
+      case 'deactive':
+      case 'rejected':
+      case 'pending':
+      case 'room allocated': return '#EF4444';
       default: return Colors.textMuted;
     }
+  };
+
+  const mapStatus = (status: string) => {
+    const s = status?.toLowerCase();
+    if (['activated', 'approved', 'active'].includes(s)) return 'Active';
+    if (['rejected', 'pending', 'room allocated', 'deactive'].includes(s)) return 'Deactive';
+    return status?.toUpperCase() || 'DEACTIVE';
   };
 
   const renderStudentItem = ({ item }: any) => (
@@ -126,7 +146,7 @@ export default function ProfileActivation() {
         </View>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(activeTab) + '20' }]}>
           <Text style={[styles.statusText, { color: getStatusColor(activeTab) }]}>
-            {activeTab.toUpperCase()}
+            {mapStatus(activeTab)}
           </Text>
         </View>
       </View>

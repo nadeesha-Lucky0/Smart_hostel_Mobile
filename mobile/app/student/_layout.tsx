@@ -12,7 +12,8 @@ import {
   LogOut,
   User,
   ArrowLeft,
-  Menu
+  Menu,
+  Bell
 } from 'lucide-react-native';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
@@ -132,6 +133,14 @@ export default function StudentLayout() {
           drawerLabel: 'Complaints',
           title: 'Grievance Portal',
           drawerIcon: ({ color, size }) => <MessageSquare size={size} color={color} />,
+        }}
+      />
+      <Drawer.Screen
+        name="notices"
+        options={{
+          drawerLabel: 'Notices',
+          title: 'Hostel Broadcasts',
+          drawerIcon: ({ color, size }) => <Bell size={size} color={color} />,
         }}
       />
       <Drawer.Screen

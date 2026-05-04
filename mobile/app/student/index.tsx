@@ -15,6 +15,7 @@ import {
 import api from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -31,16 +32,33 @@ const DashboardCard = ({ title, value, color, icon: Icon, sub }: any) => (
 
 export default function StudentDashboard() {
   const { user, setUser } = useAuthStore();
+  const router = useRouter();
   const [stats, setStats] = useState({ applicationStatus: 'Pending', payments: 'Up to date', lastEntry: 'N/A' });
   const [uploading, setUploading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [recentNotice, setRecentNotice] = useState<any>(null);
+
+  const fetchDashboardData = async () => {
+    try {
+      const res = await api.get('/notices');
+      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      if (list.length > 0) {
+        setRecentNotice(list[0]);
+      }
+    } catch (err) {
+      console.error('Fetch dashboard notices error:', err);
+    }
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Mock or actual fetch
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await fetchDashboardData();
     setRefreshing(false);
   };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -198,21 +216,32 @@ export default function StudentDashboard() {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Notices</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/student/notices')}>
             <Text style={styles.viewAll}>View All</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.noticeCard}>
-          <View style={styles.noticeIcon}>
-            <Bell size={20} color={Colors.accent} />
+        {recentNotice ? (
+          <TouchableOpacity 
+            style={styles.noticeCard} 
+            onPress={() => router.push('/student/notices')}
+          >
+            <View style={styles.noticeIcon}>
+              <Bell size={20} color={Colors.roles.student} />
+            </View>
+            <View style={styles.noticeBody}>
+              <Text style={styles.noticeTitle} numberOfLines={1}>{recentNotice.title}</Text>
+              <Text style={styles.noticeTime}>
+                {new Date(recentNotice.createdAt).toLocaleDateString()} • {recentNotice.createdBy?.name || 'Warden'}
+              </Text>
+            </View>
+            <ArrowRight size={18} color={Colors.border} />
+          </TouchableOpacity>
+        ) : (
+          <View style={[styles.noticeCard, { justifyContent: 'center', padding: 30 }]}>
+            <Text style={{ color: Colors.textMuted, fontWeight: '600' }}>No recent notices</Text>
           </View>
-          <View style={styles.noticeBody}>
-            <Text style={styles.noticeTitle}>Emergency Maintenance</Text>
-            <Text style={styles.noticeTime}>2 hours ago • Warden Office</Text>
-          </View>
-          <ArrowRight size={18} color={Colors.border} />
-        </TouchableOpacity>
+        )}
 
         <View style={styles.quickEntrySection}>
           <Text style={styles.sectionTitle}>Movement Summary</Text>

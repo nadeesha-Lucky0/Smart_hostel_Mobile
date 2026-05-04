@@ -28,7 +28,7 @@ export default function WardenProfiles() {
     try {
       let endpoint = '';
       switch (activeTab) {
-        case 'warden': endpoint = '/applications?status=Room Allocated'; break;
+        case 'warden': endpoint = '/applications'; break;
         case 'payments': endpoint = '/student-payments/monthly-submissions'; break;
         case 'clearance': endpoint = '/clearance'; break;
         case 'left': endpoint = '/leave/left-students'; break;
@@ -86,15 +86,24 @@ export default function WardenProfiles() {
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
+      case 'active':
       case 'activated':
       case 'approved':
-      case 'room allocated':
       case 'accepted': return '#10B981';
+      case 'deactive':
       case 'rejected':
-      case 'deactivated': return '#EF4444';
+      case 'deactivated':
+      case 'room allocated': return '#EF4444';
       default: return Colors.accent;
     }
   }
+
+  const mapStatus = (status: string) => {
+    const s = status?.toLowerCase();
+    if (['activated', 'approved', 'accepted', 'active'].includes(s)) return 'Active';
+    if (['rejected', 'deactivated', 'deactive', 'room allocated'].includes(s)) return 'Deactive';
+    return status || 'Pending';
+  };
 
   const openStudentDetails = (student: any) => {
     setSelectedStudent(student);
@@ -114,7 +123,7 @@ export default function WardenProfiles() {
         </View>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.applicationStatus || item.status) + '20' }]}>
           <Text style={[styles.statusText, { color: getStatusColor(item.applicationStatus || item.status) }]}>
-            {item.applicationStatus || item.status || 'Pending'}
+            {mapStatus(item.applicationStatus || item.status)}
           </Text>
         </View>
       </View>
@@ -221,7 +230,7 @@ export default function WardenProfiles() {
                   <Text style={styles.profileId}>{selectedStudent?.studentRollNumber || selectedStudent?.rollNumber}</Text>
                   <View style={[styles.statusMiniBadge, { backgroundColor: getStatusColor(selectedStudent?.applicationStatus || selectedStudent?.status) + '20' }]}>
                     <Text style={[styles.statusMiniText, { color: getStatusColor(selectedStudent?.applicationStatus || selectedStudent?.status) }]}>
-                      {selectedStudent?.applicationStatus || selectedStudent?.status || 'Pending'}
+                      {mapStatus(selectedStudent?.applicationStatus || selectedStudent?.status)}
                     </Text>
                   </View>
                 </View>
@@ -359,7 +368,7 @@ export default function WardenProfiles() {
                     onPress={() => handleUpdateStatus(selectedStudent?._id, 'Activated')}
                     disabled={actionLoading}
                   >
-                    {actionLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.primaryActionText}>Activate Profile</Text>}
+                    {actionLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.primaryActionText}>Set Active</Text>}
                   </TouchableOpacity>
                 )}
 
@@ -370,7 +379,7 @@ export default function WardenProfiles() {
                     onPress={() => handleUpdateStatus(selectedStudent?._id, 'Rejected')}
                     disabled={actionLoading}
                   >
-                    <Text style={styles.secondaryActionText}>Deactivate / Reject Profile</Text>
+                    <Text style={styles.secondaryActionText}>Set Deactive</Text>
                   </TouchableOpacity>
                 )}
               </View>

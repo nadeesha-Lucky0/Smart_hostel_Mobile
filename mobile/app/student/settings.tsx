@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import Colors from '../../constants/Colors';
-import { User, Phone, Lock, Save, Camera, X, Check, Eye, EyeOff } from 'lucide-react-native';
+import { User, Phone, Lock, Save, Camera, X, Check, Eye, EyeOff, Bell, ChevronRight } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 
 export default function StudentSettings() {
   const { user, setUser } = useAuthStore();
+  const router = useRouter();
   const [name, setName] = useState(user?.name || '');
   const [loading, setLoading] = useState(false);
 
@@ -264,6 +266,18 @@ export default function StudentSettings() {
             </TouchableOpacity>
           </View>
 
+          <Text style={styles.label}>Notifications</Text>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            onPress={() => router.push('/student/notices')}
+          >
+            <View style={styles.menuIcon}>
+              <Bell size={20} color={Colors.roles.student} />
+            </View>
+            <Text style={styles.menuText}>View Hostel Notices</Text>
+            <ChevronRight size={20} color={Colors.textMuted} />
+          </TouchableOpacity>
+
           <TouchableOpacity 
             style={[styles.saveBtn, loading && styles.disabledBtn]} 
             onPress={handleUpdateProfile}
@@ -511,6 +525,9 @@ const styles = StyleSheet.create({
   disabledInput: { backgroundColor: Colors.background + '80' },
   linkBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: Colors.roles.student + '10', borderRadius: 8 },
   linkText: { fontSize: 12, fontWeight: '700', color: Colors.roles.student },
+  menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: Colors.border, gap: 12, marginTop: 8 },
+  menuIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.roles.student + '10', alignItems: 'center', justifyContent: 'center' },
+  menuText: { flex: 1, fontSize: 15, color: Colors.text, fontWeight: '700' },
   saveBtn: { backgroundColor: Colors.roles.student, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18, borderRadius: 20, marginTop: 40, gap: 12, elevation: 4, shadowColor: Colors.roles.student, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   disabledBtn: { opacity: 0.7 },
   saveBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
