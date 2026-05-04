@@ -227,7 +227,7 @@ export default function WardenDashboard() {
               subtitle="Entry & exit history"
               icon={Clock} 
               color={Colors.textMuted} 
-              onPress={() => router.push('/warden/records')}
+              onPress={() => router.push('/warden/logs')}
             />
           </ScrollView>
         </View>
@@ -266,13 +266,13 @@ export default function WardenDashboard() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Entry/Exit Log</Text>
-            <TouchableOpacity onPress={() => router.push('/warden/outside')}>
+            <TouchableOpacity onPress={() => router.push('/warden/logs')}>
               <Text style={styles.viewAllText}>View Details</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity 
             style={styles.actionCardFull} 
-            onPress={() => router.push('/warden/outside')}
+            onPress={() => router.push('/warden/logs')}
           >
              <View style={[styles.actionIcon, { backgroundColor: '#3B82F615' }]}>
                <Users size={24} color="#3B82F6" />
