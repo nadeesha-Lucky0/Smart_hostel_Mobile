@@ -10,7 +10,8 @@ import {
   TextInput,
   Switch,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  RefreshControl
 } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
@@ -154,6 +155,7 @@ export default function StudentApplications() {
   const [uploadingMedical, setUploadingMedical] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingClearance, setIsEditingClearance] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // App Form State
   const [appForm, setAppForm] = useState<ApplicationFormState>({
@@ -177,7 +179,14 @@ export default function StudentApplications() {
   const fetchData = async () => {
     try {
       setIsLoadingApp(true);
-      
+      await performFetch();
+    } finally {
+      setIsLoadingApp(false);
+    }
+  };
+
+  const performFetch = async () => {
+    try {
       // Fetch Application
       try {
         const appRes = await api.get('/applications/me');
@@ -226,9 +235,13 @@ export default function StudentApplications() {
       }
     } catch (err: any) {
       console.error('Data fetch error:', err);
-    } finally {
-      setIsLoadingApp(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await performFetch();
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -436,7 +449,13 @@ export default function StudentApplications() {
         <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator size="large" color={Colors.roles.student} /></View>
       ) : (
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          <ScrollView 
+            style={styles.scroll} 
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.roles.student} />
+            }
+          >
 
             {activeTab === 'apply' ? (
               <View style={styles.formContainer}>

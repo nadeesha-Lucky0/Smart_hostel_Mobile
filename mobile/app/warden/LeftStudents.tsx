@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   ScrollView,
+  RefreshControl,
 } from 'react-native';
 import Colors from '../../constants/Colors';
 import {
@@ -31,19 +32,29 @@ export default function LeftStudents() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    await performFetch();
+    setLoading(false);
+  }, []);
+
+  const performFetch = async () => {
     try {
       const response = await api.get('/leave/left-students');
       let data = response.data;
       setStudents(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Fetch error:', err);
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await performFetch();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     fetchData();
@@ -145,6 +156,8 @@ export default function LeftStudents() {
           renderItem={renderStudentItem}
           keyExtractor={(item, index) => item._id || index.toString()}
           contentContainerStyle={styles.list}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           ListEmptyComponent={<Text style={styles.emptyText}>No students found in record</Text>}
         />
       )}
